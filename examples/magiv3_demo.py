@@ -14,8 +14,6 @@ import requests
 
 
 def _ensure_hf_cache_writable() -> None:
-    # Hugging Face caches to ~/.cache by default. In some environments (sandboxes, CI, shared accounts),
-    # that path may not be writable. If the user hasn't set HF_HOME, default it to a project-local dir.
     if os.environ.get("HF_HOME"):
         return
     project_root = Path(__file__).resolve().parents[1]
@@ -25,6 +23,45 @@ def _ensure_hf_cache_writable() -> None:
 
 
 _ensure_hf_cache_writable()
+
+
+def _maybe_load_dotenv() -> None:
+    """
+    Best-effort loader for a project-root `.env` file.
+
+    - Does not override already-set environment variables.
+    - Supports lines like `KEY=value` and `export KEY=value`.
+    - Ignores blank lines and `#` comments.
+    """
+    project_root = Path(__file__).resolve().parents[1]
+    dotenv_path = project_root / ".env"
+    if not dotenv_path.exists():
+        return
+
+    try:
+        content = dotenv_path.read_text(encoding="utf-8")
+    except Exception:
+        return
+
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or key in os.environ:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ[key] = value
+
+
+_maybe_load_dotenv()
 
 
 from transformers import AutoModelForCausalLM, AutoProcessor  # noqa: E402
@@ -39,7 +76,6 @@ def _pick_device(device: str) -> str:
 
 
 def _dtype_for_device(device: str) -> torch.dtype:
-    # macOS typically has no CUDA; float16 helps on MPS but is usually unsupported/slow on CPU.
     if device in {"cuda", "mps"}:
         return torch.float16
     return torch.float32
@@ -98,13 +134,6 @@ def _to_jsonable(value):
 
 
 def _maybe_extract_polygon(bbox):
-    """
-    Try to interpret `bbox` as either:
-      - [x1, y1, x2, y2]
-      - [[x, y], [x, y], ...]
-      - {"bbox": ...} / {"box": ...} / {"polygon": ...}
-    Returns (polygon_points, rect_xyxy) where either may be None.
-    """
     if bbox is None:
         return None, None
 
@@ -137,7 +166,6 @@ def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
     img = Image.open(image_path).convert("RGB")
     draw = ImageDraw.Draw(img, "RGBA")
 
-    # Panels (yellow)
     for panel in result.get("panels", []) or []:
         poly, rect = _maybe_extract_polygon(panel)
         if poly:
@@ -145,7 +173,6 @@ def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
         elif rect:
             draw.rectangle(rect, outline=(255, 215, 0, 255), width=3)
 
-    # Texts (red), fill lightly if essential
     essential = result.get("is_essential_text", []) or []
     texts = result.get("texts", []) or []
     for idx, tb in enumerate(texts):
@@ -163,7 +190,6 @@ def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
             else:
                 draw.rectangle(rect, outline=(255, 0, 0, 255), width=3)
 
-    # Characters (blue)
     for cb in result.get("characters", []) or []:
         poly, rect = _maybe_extract_polygon(cb)
         if poly:
@@ -175,14 +201,9 @@ def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
 
 
 def _extract_ocr_texts(ocr_page):
-    """
-    Magi v3 returns OCR in a few possible shapes depending on remote code revisions.
-    Normalize into a list[str] if we can.
-    """
     if ocr_page is None:
         return []
     if isinstance(ocr_page, list):
-        # Sometimes a list[str], sometimes list[dict]
         out: list[str] = []
         for x in ocr_page:
             if x is None:
@@ -214,7 +235,6 @@ def _build_transcript(result: dict, ocr_texts: list[str]) -> tuple[list[dict], s
     assoc = result.get("text_character_associations", []) or []
     char_labels = result.get("character_cluster_labels", []) or []
 
-    # text_idx -> char_idx
     text_to_char: dict[int, int] = {}
     if isinstance(assoc, list):
         for pair in assoc:
@@ -297,10 +317,6 @@ _BAD_WORDS_IDS = None
 
 
 def _build_bad_words_ids(processor):
-    """
-    For caption/prose, Magi v3 sometimes emits structural tokens like <panel> or <loc_123>.
-    Suppressing them nudges generation toward natural language.
-    """
     global _BAD_WORDS_IDS
     if _BAD_WORDS_IDS is not None:
         return _BAD_WORDS_IDS
@@ -308,42 +324,18 @@ def _build_bad_words_ids(processor):
     tokenizer = processor.tokenizer
     bad_token_ids: list[list[int]] = []
 
-    # Common structure tokens used by this model family
     for tok in [
-        "<panel>",
-        "<text>",
-        "<character>",
-        "<tail>",
-        "<od>",
-        "</od>",
-        "<ocr>",
-        "</ocr>",
-        "<cap>",
-        "</cap>",
-        "<ncap>",
-        "</ncap>",
-        "<dcap>",
-        "</dcap>",
-        "<region_cap>",
-        "</region_cap>",
-        "<region_to_desciption>",
-        "</region_to_desciption>",
-        "<proposal>",
-        "</proposal>",
-        "<poly>",
-        "</poly>",
-        "<and>",
-        "<sep>",
-        "<seg>",
-        "</seg>",
-        "<grounding>",
-        "</grounding>",
+        "<panel>", "<text>", "<character>", "<tail>", "<od>", "</od>",
+        "<ocr>", "</ocr>", "<cap>", "</cap>", "<ncap>", "</ncap>",
+        "<dcap>", "</dcap>", "<region_cap>", "</region_cap>",
+        "<region_to_desciption>", "</region_to_desciption>",
+        "<proposal>", "</proposal>", "<poly>", "</poly>",
+        "<and>", "<sep>", "<seg>", "</seg>", "<grounding>", "</grounding>",
     ]:
         tid = tokenizer.convert_tokens_to_ids(tok)
         if isinstance(tid, int) and tid != tokenizer.unk_token_id:
             bad_token_ids.append([tid])
 
-    # Location tokens
     for i in range(1000):
         tok = f"<loc_{i}>"
         tid = tokenizer.convert_tokens_to_ids(tok)
@@ -355,9 +347,7 @@ def _build_bad_words_ids(processor):
 
 
 def _cleanup_natural_text(text: str) -> str:
-    # Strip any remaining <...> tags and normalize whitespace.
     import re
-
     t = re.sub(r"<[^>]+>", " ", text)
     t = re.sub(r"\s+", " ", t).strip()
     return t
@@ -405,14 +395,9 @@ def _ollama_generate_text(
     temperature: float = 0.2,
     timeout_s: int = 120,
 ):
-    """
-    Calls local Ollama (http://127.0.0.1:11434) with a single image.
-    Returns the parsed JSON object if possible; otherwise returns {"raw": "..."}.
-    """
     images = None
     if image is not None:
         import io
-
         bio = io.BytesIO()
         image.save(bio, format="PNG")
         img_b64 = base64.b64encode(bio.getvalue()).decode("ascii")
@@ -466,7 +451,6 @@ def _parse_scene_labels(text: str) -> tuple[list[str], str]:
         elif s.lower().startswith("caption:"):
             caption = s.split(":", 1)[1].strip()
     if not caption:
-        # fallback: use whole text as caption
         caption = " ".join([ln.strip() for ln in text.splitlines() if ln.strip()])[:400]
     return tags[:6], caption
 
@@ -474,7 +458,6 @@ def _parse_scene_labels(text: str) -> tuple[list[str], str]:
 def _strip_json_fence(text: str) -> str:
     t = (text or "").strip()
     if t.startswith("```"):
-        # remove code fences if present
         lines = t.splitlines()
         if lines and lines[0].startswith("```"):
             lines = lines[1:]
@@ -485,9 +468,6 @@ def _strip_json_fence(text: str) -> str:
 
 
 def _extract_first_json_object(text: str) -> str | None:
-    """
-    Best-effort extraction of the first JSON object in a string.
-    """
     t = _strip_json_fence(text)
     start = t.find("{")
     if start == -1:
@@ -517,9 +497,6 @@ def _extract_first_json_object(text: str) -> str | None:
 
 
 def _extract_first_json_array(text: str) -> str | None:
-    """
-    Best-effort extraction of the first JSON array in a string.
-    """
     t = _strip_json_fence(text)
     start = t.find("[")
     if start == -1:
@@ -550,7 +527,6 @@ def _extract_first_json_array(text: str) -> str | None:
 
 def _sha256_png(image: Image.Image) -> str:
     import io
-
     bio = io.BytesIO()
     image.save(bio, format="PNG")
     return hashlib.sha256(bio.getvalue()).hexdigest()
@@ -565,6 +541,126 @@ def _gemini_scene_prompt() -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Gemini key rotation
+# ---------------------------------------------------------------------------
+
+class GeminiKeyRotator:
+    """
+    Holds a list of API keys and rotates to the next one whenever the current
+    key hits a quota / auth error (HTTP 429, 401, 403).  On a non-quota error
+    (network failure, 500 …) it retries the *same* key up to `max_retries`
+    times with exponential back-off before giving up.
+    """
+
+    # Status codes that mean "this key is exhausted / invalid – try the next one"
+    ROTATE_ON = {429, 401, 403}
+    # Status codes worth retrying on the same key
+    RETRY_ON  = {500, 502, 503, 504}
+
+    def __init__(
+        self,
+        keys: list[str],
+        max_retries: int = 2,
+        base_sleep_s: float = 2.0,
+        *,
+        log_key_fingerprint: bool = False,
+    ):
+        if not keys:
+            raise ValueError("GeminiKeyRotator requires at least one API key.")
+        self.keys = keys
+        self.max_retries = max_retries
+        self.base_sleep_s = base_sleep_s
+        self.log_key_fingerprint = bool(log_key_fingerprint)
+        self._idx = 0          # index of the currently active key
+        self._exhausted: set[int] = set()
+
+    @property
+    def current_key(self) -> str:
+        return self.keys[self._idx]
+
+    def current_key_fingerprint(self) -> str:
+        # Never print the raw key. Fingerprint is enough for debugging rotation.
+        return hashlib.sha256(self.current_key.encode("utf-8")).hexdigest()[:10]
+
+    def _rotate(self) -> bool:
+        """Try to advance to the next non-exhausted key.  Returns False if none left."""
+        self._exhausted.add(self._idx)
+        for offset in range(1, len(self.keys)):
+            candidate = (self._idx + offset) % len(self.keys)
+            if candidate not in self._exhausted:
+                print(f"[GeminiKeyRotator] Rotating from key index {self._idx} → {candidate}")
+                self._idx = candidate
+                return True
+        return False
+
+    def call(self, fn):
+        """
+        Call `fn(api_key: str)` using the current key.
+        - On quota/auth error  → rotate key and retry immediately (up to len(keys) times).
+        - On transient error   → back-off and retry same key (up to max_retries times).
+        - Raises on total exhaustion or non-retryable errors.
+        """
+        retries_on_current = 0
+        keys_tried = 0
+
+        while True:
+            try:
+                if self.log_key_fingerprint:
+                    print(
+                        f"[GeminiKeyRotator] Using key index {self._idx} "
+                        f"(fingerprint={self.current_key_fingerprint()})"
+                    )
+                return fn(self.current_key)
+
+            except requests.HTTPError as e:
+                status = getattr(e.response, "status_code", None)
+                if self.log_key_fingerprint:
+                    # Helpful debugging for quota/rate-limit without ever printing secrets.
+                    try:
+                        body = (e.response.text or "").strip() if getattr(e, "response", None) is not None else ""
+                    except Exception:
+                        body = ""
+                    if body:
+                        msg = ""
+                        try:
+                            data = json.loads(body)
+                            err = data.get("error") if isinstance(data, dict) else None
+                            if isinstance(err, dict):
+                                m = err.get("message")
+                                s = err.get("status")
+                                msg = f"{s}: {m}" if s and m else (m or s or "")
+                        except Exception:
+                            msg = ""
+                        if msg:
+                            print(f"[GeminiKeyRotator] HTTP {status} response: {msg}")
+                        else:
+                            snip = body.replace("\n", " ")
+                            if len(snip) > 240:
+                                snip = snip[:240] + "…"
+                            print(f"[GeminiKeyRotator] HTTP {status} response body: {snip}")
+
+                if status in self.ROTATE_ON:
+                    print(f"[GeminiKeyRotator] Key index {self._idx} returned HTTP {status} – rotating.")
+                    keys_tried += 1
+                    if keys_tried >= len(self.keys) or not self._rotate():
+                        raise RuntimeError(
+                            f"All {len(self.keys)} Gemini API key(s) are exhausted or invalid."
+                        ) from e
+                    retries_on_current = 0   # fresh counter for the new key
+                    continue
+
+                if status in self.RETRY_ON and retries_on_current < self.max_retries:
+                    sleep_s = self.base_sleep_s * (2 ** retries_on_current)
+                    print(f"[GeminiKeyRotator] HTTP {status} on key index {self._idx} – "
+                          f"retrying in {sleep_s:.1f}s (attempt {retries_on_current + 1}/{self.max_retries})")
+                    time.sleep(sleep_s)
+                    retries_on_current += 1
+                    continue
+
+                raise  # non-retryable or retries exhausted
+
+
 def _gemini_generate_scene_json_batch(
     *,
     api_key: str,
@@ -575,15 +671,10 @@ def _gemini_generate_scene_json_batch(
     thinking_budget: int,
     timeout_s: int,
 ) -> tuple[list[dict], dict]:
-    """
-    Calls Google Gemini (Generative Language API) to get {tags, caption} for multiple panels in one request.
-    Returns (items, raw_response).
-    """
     import io
 
     parts = [{"text": _gemini_scene_prompt()}]
     for panel_idx, im in panel_images:
-        # include a tiny text marker before each image so the model can align outputs
         parts.append({"text": f"PANEL {panel_idx}:"})
         bio = io.BytesIO()
         im.save(bio, format="PNG")
@@ -592,17 +683,10 @@ def _gemini_generate_scene_json_batch(
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": parts,
-            }
-        ],
+        "contents": [{"role": "user", "parts": parts}],
         "generationConfig": {
             "temperature": float(temperature),
             "maxOutputTokens": int(max_tokens),
-            # Gemini 2.5 models have thinking enabled by default. Turn it off for lower latency/quota.
-            # (If the model doesn't support it, it should be ignored.)
             "thinkingConfig": {"thinkingBudget": int(thinking_budget)},
         },
     }
@@ -612,8 +696,8 @@ def _gemini_generate_scene_json_batch(
 
     text = ""
     try:
-        parts = raw["candidates"][0]["content"]["parts"]
-        text = "".join([p.get("text", "") for p in parts if isinstance(p, dict)]).strip()
+        parts_out = raw["candidates"][0]["content"]["parts"]
+        text = "".join([p.get("text", "") for p in parts_out if isinstance(p, dict)]).strip()
     except Exception:
         text = ""
 
@@ -641,7 +725,6 @@ def _gemini_generate_scene_json_batch(
             tags = [t for t in tags if t and t not in {"...", "tag", "tags"}][:6]
             items.append({"panel_idx": panel_idx, "tags": tags, "caption": caption.strip()})
     elif isinstance(parsed, dict):
-        # Single object fallback (treat as panel_idx of the first provided image)
         first_idx = panel_images[0][0] if panel_images else 0
         tags = parsed.get("tags") if isinstance(parsed.get("tags"), list) else []
         caption = parsed.get("caption") if isinstance(parsed.get("caption"), str) else ""
@@ -659,148 +742,88 @@ def _gemini_generate_scene_json_batch(
     return items, {"response_text": text, "finishReason": finish_reason, "usageMetadata": usage, "raw": raw}
 
 
-def _gemini_post_with_backoff(fn, max_retries: int = 2, base_sleep_s: float = 2.0):
-    for attempt in range(max_retries + 1):
-        try:
-            return fn()
-        except requests.HTTPError as e:
-            status = getattr(e.response, "status_code", None)
-            # On quota/overload, don't hammer; back off and retry a little, then give up.
-            if status in {429, 500, 502, 503, 504} and attempt < max_retries:
-                time.sleep(base_sleep_s * (2**attempt))
-                continue
-            raise
+def _load_gemini_keys(key_env_var: str) -> list[str]:
+    """
+    Collect all available Gemini API keys.
+
+    Looks for:
+      - The primary env var (e.g. GEMINI_API_KEY)
+      - Numbered variants:  GEMINI_API_KEY_2, GEMINI_API_KEY_3, GEMINI_API_KEY_4, GEMINI_API_KEY_5
+        (stops at the first missing one after key 1)
+
+    Returns a deduplicated list preserving order, empty strings excluded.
+    """
+    keys: list[str] = []
+    seen: set[str] = set()
+
+    def _add(k: str) -> None:
+        k = k.strip()
+        if k and k not in seen:
+            keys.append(k)
+            seen.add(k)
+
+    primary = os.environ.get(key_env_var, "").strip()
+    _add(primary)
+
+    # Look for _2 … _5 (extend the range if you ever add more keys)
+    for n in range(2, 6):
+        val = os.environ.get(f"{key_env_var}_{n}", "").strip()
+        if not val:
+            break          # stop at first gap so GEMINI_API_KEY_4 without _3 isn't silently skipped
+        _add(val)
+
+    return keys
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Minimal Magi v3 demo runner (macOS-friendly).")
+    parser.add_argument("--images", nargs="+", required=True)
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument("--model", default="ragavsachdeva/magiv3")
+    parser.add_argument("--attn", default="eager", choices=["auto", "eager", "sdpa"])
+    parser.add_argument("--out", default="out")
+    parser.add_argument("--no-viz", action="store_true")
+    parser.add_argument("--panel-captions", action="store_true")
+    parser.add_argument("--panel-grounding", action="store_true")
+    parser.add_argument("--max-panels", type=int, default=6)
+    parser.add_argument("--beams", type=int, default=1)
+    parser.add_argument("--caption-tokens", type=int, default=64)
+    parser.add_argument("--prose-tokens", type=int, default=160)
+    parser.add_argument("--prose", action="store_true")
     parser.add_argument(
-        "--images",
-        nargs="+",
-        required=True,
-        help="One or more input images (png/jpg).",
-    )
-    parser.add_argument(
-        "--device",
-        default="auto",
-        choices=["auto", "cpu", "mps", "cuda"],
-        help="Compute device. Use 'mps' on Apple Silicon if available.",
-    )
-    parser.add_argument(
-        "--model",
-        default="ragavsachdeva/magiv3",
-        help="Hugging Face model id.",
-    )
-    parser.add_argument(
-        "--attn",
-        default="eager",
-        choices=["auto", "eager", "sdpa"],
-        help="Attention implementation. 'eager' is the safest default for remote-code models.",
-    )
-    parser.add_argument(
-        "--out",
-        default="out",
-        help="Output directory (JSON, transcript, and annotated images).",
-    )
-    parser.add_argument(
-        "--no-viz",
+        "--scene-labels",
+        dest="scene_labels",
         action="store_true",
-        help="Skip saving annotated images.",
+        help="Generate per-panel scene labels (Gemini or Ollama depending on --scene-provider).",
     )
-    parser.add_argument(
-        "--panel-captions",
-        action="store_true",
-        help="Generate a caption for each detected panel.",
-    )
-    parser.add_argument(
-        "--panel-grounding",
-        action="store_true",
-        help="Run character grounding on each panel caption (implies --panel-captions).",
-    )
-    parser.add_argument(
-        "--max-panels",
-        type=int,
-        default=6,
-        help="Max number of panels to caption/ground per page.",
-    )
-    parser.add_argument(
-        "--beams",
-        type=int,
-        default=1,
-        help="Beam search width for captioning/prose (lower is faster; 1 is fastest).",
-    )
-    parser.add_argument(
-        "--caption-tokens",
-        type=int,
-        default=64,
-        help="Max new tokens for each panel caption (lower is faster).",
-    )
-    parser.add_argument(
-        "--prose-tokens",
-        type=int,
-        default=160,
-        help="Max new tokens for page-level prose (lower is faster).",
-    )
-    parser.add_argument(
-        "--prose",
-        action="store_true",
-        help="Generate a short prose paragraph for the full page.",
-    )
+    # Back-compat alias (name is misleading; it gates Gemini too).
     parser.add_argument(
         "--ollama-scene-labels",
+        dest="scene_labels",
         action="store_true",
-        help="Use local Ollama to generate scene tags + a short caption for each detected panel crop.",
+        help="(Deprecated alias) Same as --scene-labels.",
     )
-    parser.add_argument(
-        "--scene-provider",
-        choices=["ollama", "gemini", "auto"],
-        default="ollama",
-        help="Provider for panel scene labels.",
-    )
-    parser.add_argument(
-        "--ollama-host",
-        default="http://127.0.0.1:11434",
-        help="Ollama host URL.",
-    )
-    parser.add_argument(
-        "--ollama-model",
-        default="llava-phi3:latest",
-        help="Ollama vision model to use for scene labels (e.g. llava-phi3:latest, moondream:latest, qwen2.5vl:3b).",
-    )
-    parser.add_argument(
-        "--scene-tokens",
-        type=int,
-        default=96,
-        help="Max tokens for each Ollama scene label response (lower is faster).",
-    )
-    parser.add_argument(
-        "--gemini-model",
-        default="gemini-2.0-flash",
-        help="Gemini model name (e.g. gemini-2.0-flash).",
-    )
+    parser.add_argument("--scene-provider", choices=["ollama", "gemini", "auto"], default="ollama")
+    parser.add_argument("--ollama-host", default="http://127.0.0.1:11434")
+    parser.add_argument("--ollama-model", default="llava-phi3:latest")
+    parser.add_argument("--scene-tokens", type=int, default=96)
+    parser.add_argument("--gemini-model", default="gemini-2.5-flash")
     parser.add_argument(
         "--gemini-key-env",
         default="GEMINI_API_KEY",
-        help="Env var name containing your Gemini API key.",
+        help=(
+            "Base name of the env var holding your primary Gemini API key. "
+            "Additional keys are loaded from <NAME>_2, <NAME>_3, … <NAME>_5 automatically."
+        ),
     )
     parser.add_argument(
-        "--gemini-timeout",
-        type=int,
-        default=120,
-        help="Gemini request timeout in seconds.",
+        "--gemini-log-key",
+        action="store_true",
+        help="Print the Gemini key index + a short SHA-256 fingerprint (never prints the raw key).",
     )
-    parser.add_argument(
-        "--gemini-batch-size",
-        type=int,
-        default=6,
-        help="How many panel crops to send per Gemini request (lower reduces request size; higher reduces total calls).",
-    )
-    parser.add_argument(
-        "--gemini-thinking-budget",
-        type=int,
-        default=0,
-        help="Gemini 2.5 thinking budget. Use 0 for cheapest/fastest.",
-    )
+    parser.add_argument("--gemini-timeout", type=int, default=120)
+    parser.add_argument("--gemini-batch-size", type=int, default=6)
+    parser.add_argument("--gemini-thinking-budget", type=int, default=0)
     args = parser.parse_args()
 
     device = _pick_device(args.device)
@@ -838,7 +861,6 @@ def main() -> None:
         page_result = page_result if isinstance(page_result, dict) else {"result": page_result}
         ocr_texts = _extract_ocr_texts(page_ocr)
 
-        # JSON dump
         page_out = {
             "image_path": image_path,
             "detections_and_associations": page_result,
@@ -850,7 +872,6 @@ def main() -> None:
             encoding="utf-8",
         )
 
-        # Transcript
         transcript_items, transcript_txt = _build_transcript(page_result, ocr_texts)
         for item in transcript_items:
             item["page_idx"] = page_idx
@@ -859,12 +880,11 @@ def main() -> None:
             transcript_lines_all.append(f"# page {page_idx}")
             transcript_lines_all.append(transcript_txt.rstrip("\n"))
 
-        # Visualization
         if not args.no_viz and isinstance(page_result, dict):
             _draw_overlay(image_path, page_result, str(out_dir / f"page_{page_idx}_annotated.png"))
 
         # Scene labels (Ollama or Gemini)
-        if args.ollama_scene_labels and isinstance(page_result, dict):
+        if args.scene_labels and isinstance(page_result, dict):
             pil_page = Image.open(image_path).convert("RGB")
             panel_rects = []
             for pb in (page_result.get("panels", []) or []):
@@ -917,107 +937,144 @@ def main() -> None:
                     )
 
             else:
-                # Gemini: batch panels per page + cache so reruns don't spend quota.
-                api_key = os.environ.get(args.gemini_key_env, "").strip()
-                cache_path = out_dir / "scene_cache_gemini.json"
-                try:
-                    cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
-                except Exception:
-                    cache = {}
-                cache = cache if isinstance(cache, dict) else {}
+                # ---------------------------------------------------------------
+                # Gemini path (with key rotation)
+                # ---------------------------------------------------------------
+                gemini_keys = _load_gemini_keys(args.gemini_key_env)
 
-                prompt_version = "v1"
-                panel_crops: list[tuple[int, Image.Image, str]] = []
-                for panel_idx, rect in enumerate(panel_rects):
-                    crop = _crop_rect(pil_page, rect)
-                    key = f"{_sha256_png(crop)}:{args.gemini_model}:{prompt_version}"
-                    panel_crops.append((panel_idx, crop, key))
-
-                by_panel: dict[int, dict] = {}
-                missing: list[tuple[int, Image.Image]] = []
-                missing_keys: dict[int, str] = {}
-
-                if not api_key:
-                    for panel_idx, _, key in panel_crops:
-                        by_panel[panel_idx] = {"tags": [], "caption": f"ERROR: missing Gemini API key env var {args.gemini_key_env!r}", "raw": {"provider": "gemini", "cache_key": key}}
+                if not gemini_keys:
+                    # No keys at all – mark every panel as an error immediately.
+                    by_panel: dict[int, dict] = {
+                        panel_idx: {
+                            "tags": [],
+                            "caption": f"ERROR: missing Gemini API key env var {args.gemini_key_env!r}",
+                            "raw": {"provider": "gemini"},
+                        }
+                        for panel_idx in range(len(panel_rects))
+                    }
                 else:
-                    for panel_idx, crop, key in panel_crops:
-                        cached = cache.get(key)
+                    print(f"[Gemini] Loaded {len(gemini_keys)} API key(s) for rotation.")
+                    if args.gemini_log_key:
+                        fps = [hashlib.sha256(k.encode("utf-8")).hexdigest()[:10] for k in gemini_keys]
+                        print(f"[Gemini] Key env base name: {args.gemini_key_env}")
+                        print(f"[Gemini] Key fingerprints (index → fingerprint): {list(enumerate(fps))}")
+                    rotator = GeminiKeyRotator(gemini_keys, log_key_fingerprint=args.gemini_log_key)
+
+                    cache_path = out_dir / "scene_cache_gemini.json"
+                    try:
+                        cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+                    except Exception:
+                        cache = {}
+                    cache = cache if isinstance(cache, dict) else {}
+
+                    prompt_version = "v1"
+                    panel_crops: list[tuple[int, Image.Image, str]] = []
+                    for panel_idx, rect in enumerate(panel_rects):
+                        crop = _crop_rect(pil_page, rect)
+                        key = f"{_sha256_png(crop)}:{args.gemini_model}:{prompt_version}"
+                        panel_crops.append((panel_idx, crop, key))
+
+                    by_panel = {}
+                    missing: list[tuple[int, Image.Image]] = []
+                    missing_keys: dict[int, str] = {}
+
+                    for panel_idx, crop, cache_key in panel_crops:
+                        cached = cache.get(cache_key)
                         if isinstance(cached, dict) and isinstance(cached.get("caption"), str):
-                            by_panel[panel_idx] = {"tags": cached.get("tags", []), "caption": cached.get("caption", "").strip(), "raw": {"provider": "gemini", "cache_key": key, "cached": True}}
+                            by_panel[panel_idx] = {
+                                "tags": cached.get("tags", []),
+                                "caption": cached.get("caption", "").strip(),
+                                "raw": {"provider": "gemini", "cache_key": cache_key, "cached": True},
+                            }
                         else:
                             missing.append((panel_idx, crop))
-                            missing_keys[panel_idx] = key
+                            missing_keys[panel_idx] = cache_key
 
                     batch_size = max(1, int(args.gemini_batch_size))
                     gemini_batches_meta: list[dict] = []
+
                     for i in range(0, len(missing), batch_size):
                         batch = missing[i : i + batch_size]
+                        max_tok = max(128, args.scene_tokens * max(1, len(batch)))
 
-                        def do_call():
-                            return _gemini_generate_scene_json_batch(
-                                api_key=api_key,
-                                model=args.gemini_model,
-                                panel_images=batch,
-                                max_tokens=max(128, args.scene_tokens * max(1, len(batch))),
-                                temperature=0.2,
-                                thinking_budget=max(0, int(args.gemini_thinking_budget)),
-                                timeout_s=max(5, args.gemini_timeout),
-                            )
+                        def _make_call(tok_budget: int):
+                            """Return a callable that accepts an api_key and runs the batch."""
+                            def _call(api_key: str):
+                                return _gemini_generate_scene_json_batch(
+                                    api_key=api_key,
+                                    model=args.gemini_model,
+                                    panel_images=batch,
+                                    max_tokens=tok_budget,
+                                    temperature=0.2,
+                                    thinking_budget=max(0, int(args.gemini_thinking_budget)),
+                                    timeout_s=max(5, args.gemini_timeout),
+                                )
+                            return _call
 
                         try:
-                            items, raw = _gemini_post_with_backoff(do_call)
-                            gemini_batches_meta.append(
-                                {
+                            items, raw = rotator.call(_make_call(max_tok))
+                            gemini_batches_meta.append({
+                                "page_idx": page_idx,
+                                "panel_indices": [pidx for pidx, _ in batch],
+                                "finishReason": raw.get("finishReason"),
+                                "usageMetadata": raw.get("usageMetadata"),
+                                "key_index_used": rotator._idx,
+                                "key_fingerprint": rotator.current_key_fingerprint(),
+                            })
+
+                            # If truncated, retry once with a larger output budget.
+                            if (not items) and raw.get("finishReason") == "MAX_TOKENS":
+                                retry_tok = min(2048, max_tok * 2)
+                                items, raw = rotator.call(_make_call(retry_tok))
+                                gemini_batches_meta.append({
                                     "page_idx": page_idx,
                                     "panel_indices": [pidx for pidx, _ in batch],
                                     "finishReason": raw.get("finishReason"),
                                     "usageMetadata": raw.get("usageMetadata"),
-                                }
-                            )
-                            # If truncated, retry once with a larger output budget (still a single request).
-                            if (not items) and raw.get("finishReason") == "MAX_TOKENS":
-                                def do_call_retry():
-                                    return _gemini_generate_scene_json_batch(
-                                        api_key=api_key,
-                                        model=args.gemini_model,
-                                        panel_images=batch,
-                                        max_tokens=min(2048, max(256, 2 * max(128, args.scene_tokens * max(1, len(batch))))),
-                                        temperature=0.2,
-                                        thinking_budget=max(0, int(args.gemini_thinking_budget)),
-                                        timeout_s=max(5, args.gemini_timeout),
-                                    )
-                                items, raw = _gemini_post_with_backoff(do_call_retry)
-                                gemini_batches_meta.append(
-                                    {
-                                        "page_idx": page_idx,
-                                        "panel_indices": [pidx for pidx, _ in batch],
-                                        "finishReason": raw.get("finishReason"),
-                                        "usageMetadata": raw.get("usageMetadata"),
-                                        "retry": True,
-                                    }
-                                )
+                                    "key_index_used": rotator._idx,
+                                    "key_fingerprint": rotator.current_key_fingerprint(),
+                                    "retry": True,
+                                })
+
                             for it in items:
                                 pidx = int(it.get("panel_idx"))
                                 if pidx not in missing_keys:
                                     continue
-                                by_panel[pidx] = {"tags": it.get("tags", []), "caption": it.get("caption", "").strip(), "raw": {"provider": "gemini", "cache_key": missing_keys[pidx], "cached": False}}
-                                cache[missing_keys[pidx]] = {"tags": it.get("tags", []), "caption": it.get("caption", "").strip()}
-                            # For any still-missing entries, store the raw response for debugging once (no retries).
+                                by_panel[pidx] = {
+                                    "tags": it.get("tags", []),
+                                    "caption": it.get("caption", "").strip(),
+                                    "raw": {"provider": "gemini", "cache_key": missing_keys[pidx], "cached": False},
+                                }
+                                cache[missing_keys[pidx]] = {
+                                    "tags": it.get("tags", []),
+                                    "caption": it.get("caption", "").strip(),
+                                }
+
                             for pidx, _ in batch:
                                 if pidx not in by_panel:
-                                    by_panel[pidx] = {"tags": [], "caption": "ERROR: Gemini did not return an item for this panel", "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "gemini_raw": raw}}
+                                    by_panel[pidx] = {
+                                        "tags": [],
+                                        "caption": "ERROR: Gemini did not return an item for this panel",
+                                        "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "gemini_raw": raw},
+                                    }
+
                         except Exception as e:
                             for pidx, _ in batch:
                                 if pidx not in by_panel:
-                                    by_panel[pidx] = {"tags": [], "caption": f"ERROR: {e}", "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "cached": False}}
+                                    by_panel[pidx] = {
+                                        "tags": [],
+                                        "caption": f"ERROR: {e}",
+                                        "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "cached": False},
+                                    }
 
                     try:
-                        cache_path.write_text(json.dumps(_to_jsonable(cache), ensure_ascii=False, indent=2), encoding="utf-8")
+                        cache_path.write_text(
+                            json.dumps(_to_jsonable(cache), ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
                     except Exception:
                         pass
 
-                    # Write per-request token usage so you can estimate cost per panel.
                     try:
                         (out_dir / f"page_{page_idx}_gemini_usage.json").write_text(
                             json.dumps(_to_jsonable(gemini_batches_meta), ensure_ascii=False, indent=2),
@@ -1028,16 +1085,14 @@ def main() -> None:
 
                 for panel_idx, rect in enumerate(panel_rects):
                     info = by_panel.get(panel_idx, {"tags": [], "caption": "", "raw": {}})
-                    scene_items.append(
-                        {
-                            "page_idx": page_idx,
-                            "panel_idx": panel_idx,
-                            "bbox": list(rect),
-                            "tags": info.get("tags", []) if isinstance(info.get("tags"), list) else [],
-                            "caption": info.get("caption", ""),
-                            "raw": info.get("raw", {}),
-                        }
-                    )
+                    scene_items.append({
+                        "page_idx": page_idx,
+                        "panel_idx": panel_idx,
+                        "bbox": list(rect),
+                        "tags": info.get("tags", []) if isinstance(info.get("tags"), list) else [],
+                        "caption": info.get("caption", ""),
+                        "raw": info.get("raw", {}),
+                    })
 
                 # AUTO fallback: fill Gemini failures with Ollama.
                 if args.scene_provider == "auto":
@@ -1089,41 +1144,38 @@ def main() -> None:
 
         if args.panel_captions and isinstance(page_result, dict):
             panel_boxes = page_result.get("panels", []) or []
-            # Reduce to rects and drop unparseable items
-            panel_rects: list[tuple[float, float, float, float]] = []
+            panel_rects_cap: list[tuple[float, float, float, float]] = []
             for pb in panel_boxes:
                 rect = _safe_rect_xyxy(pb)
                 if rect is None:
                     continue
-                panel_rects.append(rect)
+                panel_rects_cap.append(rect)
 
-            panel_rects = panel_rects[: max(0, args.max_panels)]
+            panel_rects_cap = panel_rects_cap[: max(0, args.max_panels)]
 
             panel_caption_items: list[dict] = []
-            if panel_rects:
+            if panel_rects_cap:
                 page_img = _read_image_rgb_np(image_path)
-                panel_images = [page_img for _ in panel_rects]
-                input_texts = ["Caption the region in 1 short sentence: {0}"] * len(panel_rects)
-                input_bboxes = [[[list(rect)]] for rect in panel_rects]
+                panel_images_cap = [page_img for _ in panel_rects_cap]
+                input_texts = ["Caption the region in 1 short sentence: {0}"] * len(panel_rects_cap)
+                input_bboxes = [[[list(rect)]] for rect in panel_rects_cap]
                 captions = _generate_text(
                     model,
                     processor,
-                    images=panel_images,
+                    images=panel_images_cap,
                     input_texts=input_texts,
                     input_bboxes=input_bboxes,
                     max_new_tokens=max(8, args.caption_tokens),
                     num_beams=max(1, args.beams),
                     suppress_structure_tokens=True,
                 )
-                for panel_idx, (rect, caption) in enumerate(zip(panel_rects, captions)):
-                    panel_caption_items.append(
-                        {
-                            "page_idx": page_idx,
-                            "panel_idx": panel_idx,
-                            "bbox": list(rect),
-                            "caption": caption.strip(),
-                        }
-                    )
+                for panel_idx, (rect, caption) in enumerate(zip(panel_rects_cap, captions)):
+                    panel_caption_items.append({
+                        "page_idx": page_idx,
+                        "panel_idx": panel_idx,
+                        "bbox": list(rect),
+                        "caption": caption.strip(),
+                    })
 
                 (out_dir / f"page_{page_idx}_panel_captions.json").write_text(
                     json.dumps(_to_jsonable(panel_caption_items), ensure_ascii=False, indent=2),
@@ -1131,7 +1183,11 @@ def main() -> None:
                 )
 
                 if args.panel_grounding:
-                    grounded = model.predict_character_grounding(panel_images, [x["caption"] for x in panel_caption_items], processor)
+                    grounded = model.predict_character_grounding(
+                        panel_images_cap,
+                        [x["caption"] for x in panel_caption_items],
+                        processor,
+                    )
                     grounded_items = []
                     for x, g in zip(panel_caption_items, grounded):
                         grounded_items.append({**x, **g})
@@ -1140,10 +1196,8 @@ def main() -> None:
                         encoding="utf-8",
                     )
 
-        # Prose generation for full page (optionally conditioned on transcript)
+        # Prose generation
         if args.prose and isinstance(page_result, dict):
-            # Keep prompt compact and stable.
-            # Use the OCR-derived transcript lines (already filtered by essential text).
             dialogue_lines = []
             for item in transcript_items:
                 t = (item.get("text") or "").strip()
@@ -1174,14 +1228,16 @@ def main() -> None:
         json.dumps(_to_jsonable(transcript_items_all), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    (out_dir / "transcript.txt").write_text("\n\n".join(transcript_lines_all) + ("\n" if transcript_lines_all else ""), encoding="utf-8")
+    (out_dir / "transcript.txt").write_text(
+        "\n\n".join(transcript_lines_all) + ("\n" if transcript_lines_all else ""),
+        encoding="utf-8",
+    )
 
     print("Done.")
     print(f"- detections_and_associations: {type(det_assoc).__name__} (len={len(det_assoc)})")
     print(f"- ocr: {type(ocr).__name__} (len={len(ocr)})")
     print(f"- outputs: {str(out_dir)}")
 
-    # Print a tiny summary for the first image to help confirm things look sane.
     if len(det_assoc) > 0 and isinstance(det_assoc[0], dict):
         print(f"First page keys: {sorted(det_assoc[0].keys())}")
 
