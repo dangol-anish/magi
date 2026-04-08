@@ -2,6 +2,8 @@ import argparse
 import os
 import json
 import base64
+import hashlib
+import time
 from pathlib import Path
 
 import numpy as np
@@ -469,6 +471,207 @@ def _parse_scene_labels(text: str) -> tuple[list[str], str]:
     return tags[:6], caption
 
 
+def _strip_json_fence(text: str) -> str:
+    t = (text or "").strip()
+    if t.startswith("```"):
+        # remove code fences if present
+        lines = t.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        t = "\n".join(lines).strip()
+    return t
+
+
+def _extract_first_json_object(text: str) -> str | None:
+    """
+    Best-effort extraction of the first JSON object in a string.
+    """
+    t = _strip_json_fence(text)
+    start = t.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(t)):
+        ch = t[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == "\"":
+                in_str = False
+            continue
+        if ch == "\"":
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return t[start : i + 1]
+    return None
+
+
+def _extract_first_json_array(text: str) -> str | None:
+    """
+    Best-effort extraction of the first JSON array in a string.
+    """
+    t = _strip_json_fence(text)
+    start = t.find("[")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(t)):
+        ch = t[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == "\"":
+                in_str = False
+            continue
+        if ch == "\"":
+            in_str = True
+        elif ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return t[start : i + 1]
+    return None
+
+
+def _sha256_png(image: Image.Image) -> str:
+    import io
+
+    bio = io.BytesIO()
+    image.save(bio, format="PNG")
+    return hashlib.sha256(bio.getvalue()).hexdigest()
+
+
+def _gemini_scene_prompt() -> str:
+    return (
+        "Label manga panels. Ignore written dialogue; focus on visuals.\n"
+        "Return ONLY JSON array:\n"
+        "[{\"panel_idx\":0,\"tags\":[\"tag\"],\"caption\":\"one short sentence\"}]\n"
+        "tags: 2-6 short lowercase labels."
+    )
+
+
+def _gemini_generate_scene_json_batch(
+    *,
+    api_key: str,
+    model: str,
+    panel_images: list[tuple[int, Image.Image]],
+    max_tokens: int,
+    temperature: float,
+    thinking_budget: int,
+    timeout_s: int,
+) -> tuple[list[dict], dict]:
+    """
+    Calls Google Gemini (Generative Language API) to get {tags, caption} for multiple panels in one request.
+    Returns (items, raw_response).
+    """
+    import io
+
+    parts = [{"text": _gemini_scene_prompt()}]
+    for panel_idx, im in panel_images:
+        # include a tiny text marker before each image so the model can align outputs
+        parts.append({"text": f"PANEL {panel_idx}:"})
+        bio = io.BytesIO()
+        im.save(bio, format="PNG")
+        img_b64 = base64.b64encode(bio.getvalue()).decode("ascii")
+        parts.append({"inline_data": {"mime_type": "image/png", "data": img_b64}})
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": parts,
+            }
+        ],
+        "generationConfig": {
+            "temperature": float(temperature),
+            "maxOutputTokens": int(max_tokens),
+            # Gemini 2.5 models have thinking enabled by default. Turn it off for lower latency/quota.
+            # (If the model doesn't support it, it should be ignored.)
+            "thinkingConfig": {"thinkingBudget": int(thinking_budget)},
+        },
+    }
+    r = requests.post(url, params={"key": api_key}, json=payload, timeout=timeout_s)
+    r.raise_for_status()
+    raw = r.json()
+
+    text = ""
+    try:
+        parts = raw["candidates"][0]["content"]["parts"]
+        text = "".join([p.get("text", "") for p in parts if isinstance(p, dict)]).strip()
+    except Exception:
+        text = ""
+
+    items: list[dict] = []
+    parsed = None
+    obj_text = _extract_first_json_array(text) or _extract_first_json_object(text) or ""
+    if obj_text:
+        try:
+            parsed = json.loads(obj_text)
+        except Exception:
+            parsed = None
+
+    if isinstance(parsed, list):
+        for entry in parsed:
+            if not isinstance(entry, dict):
+                continue
+            panel_idx = entry.get("panel_idx")
+            tags = entry.get("tags") if isinstance(entry.get("tags"), list) else []
+            caption = entry.get("caption") if isinstance(entry.get("caption"), str) else ""
+            try:
+                panel_idx = int(panel_idx)
+            except Exception:
+                continue
+            tags = [str(x).strip().lower() for x in tags if str(x).strip()]
+            tags = [t for t in tags if t and t not in {"...", "tag", "tags"}][:6]
+            items.append({"panel_idx": panel_idx, "tags": tags, "caption": caption.strip()})
+    elif isinstance(parsed, dict):
+        # Single object fallback (treat as panel_idx of the first provided image)
+        first_idx = panel_images[0][0] if panel_images else 0
+        tags = parsed.get("tags") if isinstance(parsed.get("tags"), list) else []
+        caption = parsed.get("caption") if isinstance(parsed.get("caption"), str) else ""
+        tags = [str(x).strip().lower() for x in tags if str(x).strip()]
+        tags = [t for t in tags if t and t not in {"...", "tag", "tags"}][:6]
+        items.append({"panel_idx": first_idx, "tags": tags, "caption": caption.strip()})
+
+    finish_reason = None
+    try:
+        finish_reason = raw.get("candidates", [{}])[0].get("finishReason")
+    except Exception:
+        finish_reason = None
+
+    usage = raw.get("usageMetadata") if isinstance(raw, dict) else None
+    return items, {"response_text": text, "finishReason": finish_reason, "usageMetadata": usage, "raw": raw}
+
+
+def _gemini_post_with_backoff(fn, max_retries: int = 2, base_sleep_s: float = 2.0):
+    for attempt in range(max_retries + 1):
+        try:
+            return fn()
+        except requests.HTTPError as e:
+            status = getattr(e.response, "status_code", None)
+            # On quota/overload, don't hammer; back off and retry a little, then give up.
+            if status in {429, 500, 502, 503, 504} and attempt < max_retries:
+                time.sleep(base_sleep_s * (2**attempt))
+                continue
+            raise
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Minimal Magi v3 demo runner (macOS-friendly).")
     parser.add_argument(
@@ -549,6 +752,12 @@ def main() -> None:
         help="Use local Ollama to generate scene tags + a short caption for each detected panel crop.",
     )
     parser.add_argument(
+        "--scene-provider",
+        choices=["ollama", "gemini", "auto"],
+        default="ollama",
+        help="Provider for panel scene labels.",
+    )
+    parser.add_argument(
         "--ollama-host",
         default="http://127.0.0.1:11434",
         help="Ollama host URL.",
@@ -563,6 +772,34 @@ def main() -> None:
         type=int,
         default=96,
         help="Max tokens for each Ollama scene label response (lower is faster).",
+    )
+    parser.add_argument(
+        "--gemini-model",
+        default="gemini-2.0-flash",
+        help="Gemini model name (e.g. gemini-2.0-flash).",
+    )
+    parser.add_argument(
+        "--gemini-key-env",
+        default="GEMINI_API_KEY",
+        help="Env var name containing your Gemini API key.",
+    )
+    parser.add_argument(
+        "--gemini-timeout",
+        type=int,
+        default=120,
+        help="Gemini request timeout in seconds.",
+    )
+    parser.add_argument(
+        "--gemini-batch-size",
+        type=int,
+        default=6,
+        help="How many panel crops to send per Gemini request (lower reduces request size; higher reduces total calls).",
+    )
+    parser.add_argument(
+        "--gemini-thinking-budget",
+        type=int,
+        default=0,
+        help="Gemini 2.5 thinking budget. Use 0 for cheapest/fastest.",
     )
     args = parser.parse_args()
 
@@ -626,7 +863,7 @@ def main() -> None:
         if not args.no_viz and isinstance(page_result, dict):
             _draw_overlay(image_path, page_result, str(out_dir / f"page_{page_idx}_annotated.png"))
 
-        # Scene labels via Ollama (recommended way to get rough scene descriptions)
+        # Scene labels (Ollama or Gemini)
         if args.ollama_scene_labels and isinstance(page_result, dict):
             pil_page = Image.open(image_path).convert("RGB")
             panel_rects = []
@@ -635,54 +872,211 @@ def main() -> None:
                 if rect is None:
                     continue
                 panel_rects.append(rect)
-            # Stable ordering (top-to-bottom, then left-to-right). Manga reading order is more complex;
-            # this is just to keep outputs predictable.
             panel_rects = sorted(panel_rects, key=lambda r: (float(r[1]), float(r[0])))
             panel_rects = panel_rects[: max(0, args.max_panels)]
 
-            scene_items = []
-            caption_prompt = _ollama_caption_prompt()
-            for panel_idx, rect in enumerate(panel_rects):
-                crop = _crop_rect(pil_page, rect)
-                try:
-                    caption_text = _ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=caption_prompt,
-                        image=crop,
-                        max_tokens=max(16, args.scene_tokens),
-                    )
-                except Exception as e:
-                    caption_text = f"ERROR: {e}"
+            scene_items: list[dict] = []
 
-                # Second pass: derive tags from caption (text-only) for better stability.
-                try:
-                    tags_text = _ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=_ollama_tags_prompt(caption_text),
-                        image=None,
-                        max_tokens=64,
-                        temperature=0.0,
-                    )
-                except Exception as e:
-                    tags_text = f"ERROR: {e}"
+            if args.scene_provider == "ollama":
+                caption_prompt = _ollama_caption_prompt()
+                for panel_idx, rect in enumerate(panel_rects):
+                    crop = _crop_rect(pil_page, rect)
+                    try:
+                        caption_text = _ollama_generate_text(
+                            host=args.ollama_host,
+                            model=args.ollama_model,
+                            prompt=caption_prompt,
+                            image=crop,
+                            max_tokens=max(16, args.scene_tokens),
+                        )
+                    except Exception as e:
+                        caption_text = f"ERROR: {e}"
 
-                tags, _ = _parse_scene_labels(tags_text)
-                caption = caption_text.strip()
-                scene_items.append(
-                    {
-                        "page_idx": page_idx,
-                        "panel_idx": panel_idx,
-                        "bbox": list(rect),
-                        "tags": tags,
-                        "caption": caption,
-                        "raw": {
-                            "caption_raw": caption_text,
-                            "tags_raw": tags_text,
-                        },
-                    }
-                )
+                    try:
+                        tags_text = _ollama_generate_text(
+                            host=args.ollama_host,
+                            model=args.ollama_model,
+                            prompt=_ollama_tags_prompt(caption_text),
+                            image=None,
+                            max_tokens=64,
+                            temperature=0.0,
+                        )
+                    except Exception as e:
+                        tags_text = f"ERROR: {e}"
+
+                    tags, _ = _parse_scene_labels(tags_text)
+                    scene_items.append(
+                        {
+                            "page_idx": page_idx,
+                            "panel_idx": panel_idx,
+                            "bbox": list(rect),
+                            "tags": tags,
+                            "caption": caption_text.strip(),
+                            "raw": {"provider": "ollama", "caption_raw": caption_text, "tags_raw": tags_text},
+                        }
+                    )
+
+            else:
+                # Gemini: batch panels per page + cache so reruns don't spend quota.
+                api_key = os.environ.get(args.gemini_key_env, "").strip()
+                cache_path = out_dir / "scene_cache_gemini.json"
+                try:
+                    cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+                except Exception:
+                    cache = {}
+                cache = cache if isinstance(cache, dict) else {}
+
+                prompt_version = "v1"
+                panel_crops: list[tuple[int, Image.Image, str]] = []
+                for panel_idx, rect in enumerate(panel_rects):
+                    crop = _crop_rect(pil_page, rect)
+                    key = f"{_sha256_png(crop)}:{args.gemini_model}:{prompt_version}"
+                    panel_crops.append((panel_idx, crop, key))
+
+                by_panel: dict[int, dict] = {}
+                missing: list[tuple[int, Image.Image]] = []
+                missing_keys: dict[int, str] = {}
+
+                if not api_key:
+                    for panel_idx, _, key in panel_crops:
+                        by_panel[panel_idx] = {"tags": [], "caption": f"ERROR: missing Gemini API key env var {args.gemini_key_env!r}", "raw": {"provider": "gemini", "cache_key": key}}
+                else:
+                    for panel_idx, crop, key in panel_crops:
+                        cached = cache.get(key)
+                        if isinstance(cached, dict) and isinstance(cached.get("caption"), str):
+                            by_panel[panel_idx] = {"tags": cached.get("tags", []), "caption": cached.get("caption", "").strip(), "raw": {"provider": "gemini", "cache_key": key, "cached": True}}
+                        else:
+                            missing.append((panel_idx, crop))
+                            missing_keys[panel_idx] = key
+
+                    batch_size = max(1, int(args.gemini_batch_size))
+                    gemini_batches_meta: list[dict] = []
+                    for i in range(0, len(missing), batch_size):
+                        batch = missing[i : i + batch_size]
+
+                        def do_call():
+                            return _gemini_generate_scene_json_batch(
+                                api_key=api_key,
+                                model=args.gemini_model,
+                                panel_images=batch,
+                                max_tokens=max(128, args.scene_tokens * max(1, len(batch))),
+                                temperature=0.2,
+                                thinking_budget=max(0, int(args.gemini_thinking_budget)),
+                                timeout_s=max(5, args.gemini_timeout),
+                            )
+
+                        try:
+                            items, raw = _gemini_post_with_backoff(do_call)
+                            gemini_batches_meta.append(
+                                {
+                                    "page_idx": page_idx,
+                                    "panel_indices": [pidx for pidx, _ in batch],
+                                    "finishReason": raw.get("finishReason"),
+                                    "usageMetadata": raw.get("usageMetadata"),
+                                }
+                            )
+                            # If truncated, retry once with a larger output budget (still a single request).
+                            if (not items) and raw.get("finishReason") == "MAX_TOKENS":
+                                def do_call_retry():
+                                    return _gemini_generate_scene_json_batch(
+                                        api_key=api_key,
+                                        model=args.gemini_model,
+                                        panel_images=batch,
+                                        max_tokens=min(2048, max(256, 2 * max(128, args.scene_tokens * max(1, len(batch))))),
+                                        temperature=0.2,
+                                        thinking_budget=max(0, int(args.gemini_thinking_budget)),
+                                        timeout_s=max(5, args.gemini_timeout),
+                                    )
+                                items, raw = _gemini_post_with_backoff(do_call_retry)
+                                gemini_batches_meta.append(
+                                    {
+                                        "page_idx": page_idx,
+                                        "panel_indices": [pidx for pidx, _ in batch],
+                                        "finishReason": raw.get("finishReason"),
+                                        "usageMetadata": raw.get("usageMetadata"),
+                                        "retry": True,
+                                    }
+                                )
+                            for it in items:
+                                pidx = int(it.get("panel_idx"))
+                                if pidx not in missing_keys:
+                                    continue
+                                by_panel[pidx] = {"tags": it.get("tags", []), "caption": it.get("caption", "").strip(), "raw": {"provider": "gemini", "cache_key": missing_keys[pidx], "cached": False}}
+                                cache[missing_keys[pidx]] = {"tags": it.get("tags", []), "caption": it.get("caption", "").strip()}
+                            # For any still-missing entries, store the raw response for debugging once (no retries).
+                            for pidx, _ in batch:
+                                if pidx not in by_panel:
+                                    by_panel[pidx] = {"tags": [], "caption": "ERROR: Gemini did not return an item for this panel", "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "gemini_raw": raw}}
+                        except Exception as e:
+                            for pidx, _ in batch:
+                                if pidx not in by_panel:
+                                    by_panel[pidx] = {"tags": [], "caption": f"ERROR: {e}", "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "cached": False}}
+
+                    try:
+                        cache_path.write_text(json.dumps(_to_jsonable(cache), ensure_ascii=False, indent=2), encoding="utf-8")
+                    except Exception:
+                        pass
+
+                    # Write per-request token usage so you can estimate cost per panel.
+                    try:
+                        (out_dir / f"page_{page_idx}_gemini_usage.json").write_text(
+                            json.dumps(_to_jsonable(gemini_batches_meta), ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
+                    except Exception:
+                        pass
+
+                for panel_idx, rect in enumerate(panel_rects):
+                    info = by_panel.get(panel_idx, {"tags": [], "caption": "", "raw": {}})
+                    scene_items.append(
+                        {
+                            "page_idx": page_idx,
+                            "panel_idx": panel_idx,
+                            "bbox": list(rect),
+                            "tags": info.get("tags", []) if isinstance(info.get("tags"), list) else [],
+                            "caption": info.get("caption", ""),
+                            "raw": info.get("raw", {}),
+                        }
+                    )
+
+                # AUTO fallback: fill Gemini failures with Ollama.
+                if args.scene_provider == "auto":
+                    caption_prompt = _ollama_caption_prompt()
+                    for item in scene_items:
+                        if item.get("caption", "").startswith("ERROR:") or not (item.get("caption", "") or "").strip():
+                            panel_idx = int(item["panel_idx"])
+                            rect = panel_rects[panel_idx]
+                            crop = _crop_rect(pil_page, rect)
+                            try:
+                                caption_text = _ollama_generate_text(
+                                    host=args.ollama_host,
+                                    model=args.ollama_model,
+                                    prompt=caption_prompt,
+                                    image=crop,
+                                    max_tokens=max(16, args.scene_tokens),
+                                )
+                            except Exception as e:
+                                caption_text = f"ERROR: {e}"
+                            try:
+                                tags_text = _ollama_generate_text(
+                                    host=args.ollama_host,
+                                    model=args.ollama_model,
+                                    prompt=_ollama_tags_prompt(caption_text),
+                                    image=None,
+                                    max_tokens=64,
+                                    temperature=0.0,
+                                )
+                            except Exception as e:
+                                tags_text = f"ERROR: {e}"
+                            tags, _ = _parse_scene_labels(tags_text)
+                            item["tags"] = tags
+                            item["caption"] = caption_text.strip()
+                            item["raw"] = {
+                                "provider": "ollama",
+                                "fallback_from": "gemini",
+                                "caption_raw": caption_text,
+                                "tags_raw": tags_text,
+                            }
 
             (out_dir / f"page_{page_idx}_scene_labels.json").write_text(
                 json.dumps(_to_jsonable(scene_items), ensure_ascii=False, indent=2),

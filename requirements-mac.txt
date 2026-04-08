@@ -13,3 +13,4 @@ timm
 pytorch-metric-learning
 matplotlib
 shapely
+requests
