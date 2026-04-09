@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/magi/storyboard.schema.json",
+  "title": "Magi Recap Storyboard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "chapter_id", "panels", "beats", "script"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema/version for forward compatibility.",
+      "pattern": "^v\\d+$",
+      "examples": ["v1"]
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO-8601 timestamp when this storyboard was produced.",
+      "examples": ["2026-04-09T10:15:30Z"]
+    },
+    "chapter_id": {
+      "type": "string",
+      "description": "Stable identifier for the chapter (e.g. series/chapter-number)."
+    },
+    "source_images": {
+      "type": "array",
+      "description": "Ordered list of source page images used to build this storyboard.",
+      "items": { "type": "string" }
+    },
+    "panels": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/panel" }
+    },
+    "beats": {
+      "type": "array",
+      "description": "Narrative segments grouping one or more panels into a unit suitable for script generation.",
+      "items": { "$ref": "#/$defs/beat" }
+    },
+    "script": {
+      "type": "array",
+      "description": "Script lines with explicit grounding to panel_ids; later stages add audio + timings.",
+      "items": { "$ref": "#/$defs/script_line" }
+    }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["OK", "UNCERTAIN", "BLOCKED"]
+    },
+    "bbox_xyxy": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "number" },
+      "description": "[x1, y1, x2, y2] in source-image pixel coordinates."
+    },
+    "ocr_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" },
+        "bbox": { "$ref": "#/$defs/bbox_xyxy" },
+        "speaker": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panel_id", "page_idx", "bbox", "crop_path", "ocr_lines", "scene_caption"],
+      "properties": {
+        "panel_id": {
+          "type": "string",
+          "description": "Stable panel identifier (deterministic across re-runs)."
+        },
+        "page_idx": { "type": "integer", "minimum": 0 },
+        "bbox": { "$ref": "#/$defs/bbox_xyxy" },
+        "crop_path": {
+          "type": "string",
+          "description": "Path to the cropped panel image relative to the chapter output root."
+        },
+        "ocr_lines": {
+          "type": "array",
+          "description": "OCR text detected within this panel (speech + captions).",
+          "items": { "$ref": "#/$defs/ocr_line" }
+        },
+        "scene_caption": {
+          "type": "string",
+          "description": "Short visual-only caption for this panel (ignore written dialogue)."
+        },
+        "scene_tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "characters": {
+          "type": "array",
+          "description": "Optional character labels/ids present in the panel.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "beat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["beat_id", "panel_ids", "summary", "status"],
+      "properties": {
+        "beat_id": { "type": "string" },
+        "panel_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "summary": {
+          "type": "string",
+          "description": "Short grounded summary of what happens in these panels."
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "notes": { "type": "string" }
+      }
+    },
+    "script_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line_id", "beat_id", "panel_ids", "text", "status"],
+      "properties": {
+        "line_id": { "type": "string" },
+        "beat_id": { "type": "string" },
+        "panel_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "text": { "type": "string" },
+        "status": { "$ref": "#/$defs/status" },
+        "notes": { "type": "string" },
+        "audio_path": {
+          "type": "string",
+          "description": "Path to generated audio for this line (relative to chapter output root)."
+        },
+        "start_s": { "type": "number", "minimum": 0 },
+        "end_s": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
+
