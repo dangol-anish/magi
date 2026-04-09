@@ -16,9 +16,15 @@ def main() -> None:
     ap.add_argument("--overwrite", action="store_true", help="Replace existing beats[].")
     ap.add_argument(
         "--mode",
-        choices=["one-per-panel"],
+        choices=["one-per-panel", "chunked"],
         default="one-per-panel",
         help="Beat segmentation strategy (start simple).",
+    )
+    ap.add_argument(
+        "--group-size",
+        type=int,
+        default=3,
+        help="For --mode chunked: number of panels per beat (default: 3).",
     )
     args = ap.parse_args()
 
@@ -60,6 +66,45 @@ def main() -> None:
                     "status": status,
                 }
             )
+    elif args.mode == "chunked":
+        group_size = max(1, int(args.group_size))
+        beat_idx = 0
+        for start in range(0, len(panels), group_size):
+            chunk = panels[start : start + group_size]
+            panel_ids: list[str] = []
+            scene_caps: list[str] = []
+            has_any_ocr = False
+
+            for j, p in enumerate(chunk):
+                if not isinstance(p, dict):
+                    continue
+                pid = p.get("panel_id")
+                if isinstance(pid, str) and pid.strip():
+                    panel_ids.append(pid)
+                cap = (p.get("scene_caption") or "").strip() if isinstance(p.get("scene_caption"), str) else ""
+                if cap:
+                    scene_caps.append(cap)
+                ocr_lines = p.get("ocr_lines") if isinstance(p.get("ocr_lines"), list) else []
+                if any(isinstance(x, dict) and isinstance(x.get("text"), str) and x.get("text").strip() for x in ocr_lines):
+                    has_any_ocr = True
+
+            if not panel_ids:
+                continue
+
+            # Very simple summary: join up to 2 scene captions.
+            summary = ""
+            if scene_caps:
+                summary = " ".join(scene_caps[:2])
+            status = "OK" if (summary or has_any_ocr) else "UNCERTAIN"
+            beats.append(
+                {
+                    "beat_id": f"b{beat_idx:04d}",
+                    "panel_ids": panel_ids,
+                    "summary": summary,
+                    "status": status,
+                }
+            )
+            beat_idx += 1
 
     doc["beats"] = beats
 
@@ -71,4 +116,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
