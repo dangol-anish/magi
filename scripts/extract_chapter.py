@@ -298,15 +298,46 @@ def main() -> None:
 
                     return _call
 
+                def _safe_gemini_error(e: Exception) -> str:
+                    # Avoid leaking API keys (which may appear in URLs).
+                    if isinstance(e, requests.HTTPError):
+                        status = getattr(getattr(e, "response", None), "status_code", None)
+                        msg = ""
+                        try:
+                            body = (e.response.text or "").strip() if getattr(e, "response", None) is not None else ""
+                            data = json.loads(body) if body else {}
+                            err = data.get("error") if isinstance(data, dict) else None
+                            if isinstance(err, dict):
+                                m = err.get("message")
+                                s = err.get("status")
+                                msg = f"{s}: {m}" if s and m else (m or s or "")
+                        except Exception:
+                            msg = ""
+                        if status is not None and msg:
+                            return f"HTTP {status} {msg}"
+                        if status is not None:
+                            return f"HTTP {status}"
+                        return "HTTP error"
+                    if isinstance(e, requests.exceptions.RequestException):
+                        return f"{type(e).__name__}"
+                    return f"{type(e).__name__}"
+
                 try:
                     items, raw = gemini_rotator.call(_make_call())
-                except requests.exceptions.RequestException as e:
-                    # Avoid leaking API keys in exception strings/URLs. Keep message minimal.
-                    _fail(
-                        "Gemini request failed (network/transport error). "
-                        "Re-run with network access enabled. "
-                        f"error_type={type(e).__name__}"
-                    )
+                except Exception as e:
+                    # If the user explicitly requested Gemini-only, fail fast.
+                    if scene_provider == "gemini":
+                        _fail(f"Gemini request failed: {_safe_gemini_error(e)}")
+
+                    # AUTO mode: mark these panels as Gemini errors so the Ollama fallback fills them.
+                    err_s = _safe_gemini_error(e)
+                    print(f"[Gemini] Warning: failed to generate scene labels ({err_s}); falling back to Ollama.")
+                    for local_idx, _ in batch:
+                        meta = per_panel_meta[local_idx]
+                        meta["scene_caption"] = f"ERROR: Gemini failed ({err_s})"
+                        meta["scene_tags"] = []
+                        per_panel_meta[local_idx] = meta
+                    continue
 
                 # Apply results
                 by_idx = {}
@@ -327,6 +358,11 @@ def main() -> None:
                         ck = gemini_batch_keys.get(local_idx)
                         if args.cache and ck:
                             gemini_cache[ck] = {"caption": meta["scene_caption"], "tags": meta["scene_tags"]}
+                    else:
+                        # Force AUTO fallback if Gemini didn't return this panel.
+                        if scene_provider == "auto":
+                            meta["scene_caption"] = "ERROR: Gemini returned no item for this panel"
+                            meta["scene_tags"] = []
                     per_panel_meta[local_idx] = meta
 
         # Auto fallback for missing Gemini captions
