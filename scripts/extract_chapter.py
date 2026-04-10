@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image
-import requests
 
 
 def _fail(msg: str) -> None:
@@ -59,8 +58,22 @@ def _contains(panel_xyxy, text_xyxy) -> bool:
     return (x1 <= cx <= x2) and (y1 <= cy <= y2)
 
 
+def _speaker_for_text_idx(*, text_idx: int, text_to_char: dict[int, int], char_labels: list) -> str:
+    char_idx = text_to_char.get(text_idx)
+    if char_idx is None:
+        return "unsure"
+    if 0 <= char_idx < len(char_labels):
+        return f"char_{char_labels[char_idx]}"
+    return f"char_{char_idx}"
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Stage 1: extract per-panel crops + metadata into a minimal storyboard.json.")
+    ap = argparse.ArgumentParser(
+        description=(
+            "Stage 1 (Magi-only): run Magi OCR + panel detection; crop each detected panel (yellow boxes) into numbered "
+            "subfolders and write transcripts + a minimal final/storyboard.json (scene fields left empty)."
+        )
+    )
     ap.add_argument("--chapter-id", required=True)
     ap.add_argument("--images", nargs="+", required=True, help="Page image paths (or a folder containing images).")
     ap.add_argument("--out", required=True, help="Chapter output root folder (will contain final/...).")
@@ -74,21 +87,30 @@ def main() -> None:
         help="Allow Hugging Face downloads if files are missing locally (default: local-files-only).",
     )
 
-    ap.add_argument("--scene-provider", choices=["ollama", "gemini", "auto", "none"], default="auto")
-    ap.add_argument("--ollama-host", default="http://127.0.0.1:11434")
-    ap.add_argument("--ollama-model", default="llava-phi3:latest")
-    ap.add_argument("--gemini-model", default="gemini-2.5-flash")
-    ap.add_argument("--gemini-key-env", default="GEMINI_API_KEY")
-    ap.add_argument("--gemini-timeout", type=int, default=120)
-    ap.add_argument("--gemini-batch-size", type=int, default=6)
-    ap.add_argument("--gemini-thinking-budget", type=int, default=0)
-    ap.add_argument("--gemini-log-key", action="store_true")
+    # Deprecated: Stage 2 moved to scripts/add_scenes.py (kept for backward compatibility).
+    ap.add_argument(
+        "--scene-provider",
+        choices=["ollama", "gemini", "auto", "none"],
+        default="none",
+        help="DEPRECATED (ignored). Run `python scripts/add_scenes.py final/storyboard.json` instead.",
+    )
+    ap.add_argument("--ollama-host", default="http://127.0.0.1:11434", help=argparse.SUPPRESS)
+    ap.add_argument("--ollama-model", default="llava-phi3:latest", help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-model", default="gemini-2.5-flash", help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-key-env", default="GEMINI_API_KEY", help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-timeout", type=int, default=120, help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-batch-size", type=int, default=6, help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-thinking-budget", type=int, default=0, help=argparse.SUPPRESS)
+    ap.add_argument("--gemini-log-key", action="store_true", help=argparse.SUPPRESS)
+    ap.add_argument("--cache", action="store_true", help=argparse.SUPPRESS)
 
     ap.add_argument("--max-panels", type=int, default=0, help="Optional cap per page (0 = no cap).")
-    ap.add_argument("--cache", action="store_true", help="Enable on-disk Gemini scene cache under final/.cache/.")
     ap.add_argument("--debug", action="store_true", help="Write extra debug outputs under debug/.")
 
     args = ap.parse_args()
+
+    if getattr(args, "scene_provider", "none") != "none":
+        print("Warning: --scene-provider is deprecated and ignored in Stage 1. Run scripts/add_scenes.py for scenes.")
 
     if not args.allow_downloads:
         # Avoid network calls in restricted environments and keep runs reproducible.
@@ -97,13 +119,8 @@ def main() -> None:
 
     out_root = Path(args.out).expanduser()
     final_root = out_root / "final"
-    panels_dir = final_root / "panels"
-    panels_dir.mkdir(parents=True, exist_ok=True)
-
-    cache_dir = final_root / ".cache"
-    cache_path = cache_dir / "scene_cache_gemini.json"
-    if args.cache:
-        cache_dir.mkdir(parents=True, exist_ok=True)
+    pages_dir = final_root / "pages"
+    pages_dir.mkdir(parents=True, exist_ok=True)
 
     # Reuse the demo implementation for model + providers (keeps behavior consistent).
     project_root = Path(__file__).resolve().parents[1]
@@ -152,29 +169,7 @@ def main() -> None:
             )
             demo._draw_overlay(img_path, page_result, str(debug_root / f"page_{page_idx}_annotated.png"))
 
-    # Scene caption provider setup (only if requested)
-    scene_provider = args.scene_provider
-    gemini_rotator = None
-    gemini_cache: dict = {}
-    if scene_provider in {"gemini", "auto"}:
-        gemini_keys = demo._load_gemini_keys(args.gemini_key_env)
-        if gemini_keys:
-            if args.gemini_log_key:
-                fps = [hashlib.sha256(k.encode("utf-8")).hexdigest()[:10] for k in gemini_keys]
-                print(f"[Gemini] Key env base name: {args.gemini_key_env}")
-                print(f"[Gemini] Key fingerprints (index → fingerprint): {list(enumerate(fps))}")
-            gemini_rotator = demo.GeminiKeyRotator(gemini_keys, log_key_fingerprint=args.gemini_log_key)
-            if args.cache and cache_path.exists():
-                try:
-                    gemini_cache = json.loads(cache_path.read_text(encoding="utf-8"))
-                except Exception:
-                    gemini_cache = {}
-            gemini_cache = gemini_cache if isinstance(gemini_cache, dict) else {}
-        elif scene_provider == "gemini":
-            _fail(f"No Gemini keys found in env var {args.gemini_key_env!r} (+ _2.._5).")
-
     panels_out: list[dict] = []
-    prompt_version = "v1"
     chapter_slug = str(args.chapter_id).strip().replace("/", "__")
     if not chapter_slug:
         _fail("--chapter-id must not be empty.")
@@ -182,28 +177,47 @@ def main() -> None:
     for page_idx, (img_path, page_result, page_ocr) in enumerate(zip(image_paths, det_assoc, ocr)):
         page_result = page_result if isinstance(page_result, dict) else {"result": page_result}
 
-        panels_xyxy = page_result.get("panels", []) or []
-        if not isinstance(panels_xyxy, list):
-            panels_xyxy = []
-        panels_xyxy = [p for p in panels_xyxy if isinstance(p, (list, tuple)) and len(p) == 4]
+        panels_raw = page_result.get("panels", []) or []
+        if not isinstance(panels_raw, list):
+            panels_raw = []
+
+        panels_xyxy: list[list[float]] = []
+        for p in panels_raw:
+            try:
+                _, rect = demo._maybe_extract_polygon(p)
+            except Exception:
+                rect = None
+            if rect is None:
+                continue
+            x1, y1, x2, y2 = [float(x) for x in rect]
+            panels_xyxy.append([x1, y1, x2, y2])
+
         panels_xyxy = sorted(panels_xyxy, key=lambda r: (float(r[1]), float(r[0])))
         if int(args.max_panels) > 0:
             panels_xyxy = panels_xyxy[: int(args.max_panels)]
 
-        ocr_texts = []
+        ocr_texts = demo._extract_ocr_texts(page_ocr)
         ocr_bboxes = []
-        if isinstance(page_ocr, dict):
-            ocr_texts = page_ocr.get("ocr_texts") or []
+        if isinstance(page_ocr, dict) and isinstance(page_ocr.get("bboxes"), list):
             ocr_bboxes = page_ocr.get("bboxes") or []
-        if not (isinstance(ocr_texts, list) and isinstance(ocr_bboxes, list) and len(ocr_texts) == len(ocr_bboxes)):
-            ocr_texts, ocr_bboxes = [], []
+        ocr_bboxes = ocr_bboxes if isinstance(ocr_bboxes, list) else []
+
+        texts = page_result.get("texts", []) or []
+        essential = page_result.get("is_essential_text", []) or []
+        assoc = page_result.get("text_character_associations", []) or []
+        char_labels = page_result.get("character_cluster_labels", []) or []
+
+        text_to_char: dict[int, int] = {}
+        if isinstance(assoc, list):
+            for pair in assoc:
+                if isinstance(pair, (list, tuple)) and len(pair) >= 2:
+                    try:
+                        text_to_char[int(pair[0])] = int(pair[1])
+                    except Exception:
+                        continue
 
         pil_page = Image.open(img_path).convert("RGB")
         w, h = pil_page.size
-
-        # Gemini batching needs images for just the missing cache keys
-        gemini_batch: list[tuple[int, Image.Image]] = []
-        gemini_batch_keys: dict[int, str] = {}
 
         per_panel_meta: list[dict] = []
         for local_idx, rect in enumerate(panels_xyxy):
@@ -212,18 +226,91 @@ def main() -> None:
             crop_hash = _sha256_png(crop)
             pid = f"{chapter_slug}_p{page_idx:03d}_n{local_idx:03d}_{crop_hash[:10]}"
 
-            crop_rel = f"final/panels/{pid}.png"
+            panel_dir_rel = f"final/pages/{page_idx:03d}/panels/{local_idx:03d}"
+            panel_dir = out_root / panel_dir_rel
+            panel_dir.mkdir(parents=True, exist_ok=True)
+
+            crop_rel = f"{panel_dir_rel}/panel.png"
             crop_path = out_root / crop_rel
             crop.save(crop_path)
 
-            ocr_lines = []
-            for t, bb in zip(ocr_texts, ocr_bboxes):
-                if not isinstance(t, str):
+            transcript_items: list[dict] = []
+            ocr_lines: list[dict] = []
+            n = max(
+                len(texts) if isinstance(texts, list) else 0,
+                len(ocr_texts),
+                len(essential) if isinstance(essential, list) else 0,
+            )
+            for text_idx in range(n):
+                raw_text = ocr_texts[text_idx] if text_idx < len(ocr_texts) else ""
+                if not isinstance(raw_text, str):
+                    raw_text = str(raw_text)
+                text = raw_text.strip()
+                if not text:
                     continue
-                if not (isinstance(bb, (list, tuple)) and len(bb) == 4):
+
+                bbox = None
+                if isinstance(texts, list) and text_idx < len(texts):
+                    try:
+                        bbox = demo._safe_rect_xyxy(texts[text_idx])
+                    except Exception:
+                        bbox = None
+                if bbox is None and text_idx < len(ocr_bboxes):
+                    bb = ocr_bboxes[text_idx]
+                    if isinstance(bb, (list, tuple)) and len(bb) == 4:
+                        bbox = tuple(float(x) for x in bb)
+
+                if bbox is None or not _contains(rect, bbox):
                     continue
-                if _contains(rect, bb):
-                    ocr_lines.append({"text": t.strip(), "bbox": [float(x) for x in bb]})
+
+                is_ess = True
+                if isinstance(essential, list) and text_idx < len(essential):
+                    try:
+                        is_ess = bool(essential[text_idx])
+                    except Exception:
+                        is_ess = True
+
+                speaker = _speaker_for_text_idx(
+                    text_idx=text_idx,
+                    text_to_char=text_to_char,
+                    char_labels=char_labels if isinstance(char_labels, list) else [],
+                )
+                bbox_xyxy = [float(x) for x in bbox]
+                transcript_items.append(
+                    {
+                        "text_idx": int(text_idx),
+                        "speaker": speaker,
+                        "text": text,
+                        "bbox": bbox_xyxy,
+                        "essential": bool(is_ess),
+                    }
+                )
+                ocr_lines.append({"text": text, "bbox": bbox_xyxy, "speaker": speaker})
+
+            transcript_lines = [f"<{it['speaker']}>: {it['text']}" for it in transcript_items]
+            (panel_dir / "transcript.txt").write_text(
+                "\n".join(transcript_lines) + ("\n" if transcript_lines else ""),
+                encoding="utf-8",
+            )
+            (panel_dir / "transcript.json").write_text(
+                json.dumps(transcript_items, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (panel_dir / "panel.json").write_text(
+                json.dumps(
+                    {
+                        "panel_id": pid,
+                        "page_idx": int(page_idx),
+                        "panel_idx": int(local_idx),
+                        "bbox": [float(x) for x in rect],
+                        "crop_path": crop_rel,
+                        "crop_sha256_png": crop_hash,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
 
             meta = {
                 "panel_id": pid,
@@ -236,178 +323,7 @@ def main() -> None:
             }
             per_panel_meta.append(meta)
 
-            if scene_provider in {"gemini", "auto"} and gemini_rotator is not None:
-                cache_key = f"{crop_hash}:{args.gemini_model}:{prompt_version}"
-                cached = gemini_cache.get(cache_key) if isinstance(gemini_cache, dict) else None
-                if isinstance(cached, dict) and isinstance(cached.get("caption"), str):
-                    meta["scene_caption"] = (cached.get("caption") or "").strip()
-                    tags = cached.get("tags") if isinstance(cached.get("tags"), list) else []
-                    meta["scene_tags"] = [str(x).strip().lower() for x in tags if str(x).strip()]
-                else:
-                    gemini_batch.append((local_idx, crop))
-                    gemini_batch_keys[local_idx] = cache_key
-
-            elif scene_provider == "ollama":
-                try:
-                    caption = demo._ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=demo._ollama_caption_prompt(),
-                        image=crop,
-                        max_tokens=128,
-                        temperature=0.2,
-                        timeout_s=120,
-                    )
-                except Exception as e:
-                    caption = f"ERROR: {e}"
-                meta["scene_caption"] = (caption or "").strip()
-                try:
-                    tags_text = demo._ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=demo._ollama_tags_prompt(meta["scene_caption"]),
-                        image=None,
-                        max_tokens=64,
-                        temperature=0.0,
-                        timeout_s=120,
-                    )
-                    tags, _ = demo._parse_scene_labels(tags_text)
-                    meta["scene_tags"] = tags
-                except Exception:
-                    pass
-
-            per_panel_meta[-1] = meta
-
-        # Run Gemini for uncached panels in this page
-        if gemini_batch and gemini_rotator is not None:
-            batch_size = max(1, int(args.gemini_batch_size))
-            for i in range(0, len(gemini_batch), batch_size):
-                batch = gemini_batch[i : i + batch_size]
-
-                def _make_call():
-                    def _call(api_key: str):
-                        return demo._gemini_generate_scene_json_batch(
-                            api_key=api_key,
-                            model=args.gemini_model,
-                            panel_images=batch,
-                            max_tokens=max(256, 128 * len(batch)),
-                            temperature=0.2,
-                            thinking_budget=max(0, int(args.gemini_thinking_budget)),
-                            timeout_s=max(5, int(args.gemini_timeout)),
-                        )
-
-                    return _call
-
-                def _safe_gemini_error(e: Exception) -> str:
-                    # Avoid leaking API keys (which may appear in URLs).
-                    if isinstance(e, requests.HTTPError):
-                        status = getattr(getattr(e, "response", None), "status_code", None)
-                        msg = ""
-                        try:
-                            body = (e.response.text or "").strip() if getattr(e, "response", None) is not None else ""
-                            data = json.loads(body) if body else {}
-                            err = data.get("error") if isinstance(data, dict) else None
-                            if isinstance(err, dict):
-                                m = err.get("message")
-                                s = err.get("status")
-                                msg = f"{s}: {m}" if s and m else (m or s or "")
-                        except Exception:
-                            msg = ""
-                        if status is not None and msg:
-                            return f"HTTP {status} {msg}"
-                        if status is not None:
-                            return f"HTTP {status}"
-                        return "HTTP error"
-                    if isinstance(e, requests.exceptions.RequestException):
-                        return f"{type(e).__name__}"
-                    return f"{type(e).__name__}"
-
-                try:
-                    items, raw = gemini_rotator.call(_make_call())
-                except Exception as e:
-                    # If the user explicitly requested Gemini-only, fail fast.
-                    if scene_provider == "gemini":
-                        _fail(f"Gemini request failed: {_safe_gemini_error(e)}")
-
-                    # AUTO mode: mark these panels as Gemini errors so the Ollama fallback fills them.
-                    err_s = _safe_gemini_error(e)
-                    print(f"[Gemini] Warning: failed to generate scene labels ({err_s}); falling back to Ollama.")
-                    for local_idx, _ in batch:
-                        meta = per_panel_meta[local_idx]
-                        meta["scene_caption"] = f"ERROR: Gemini failed ({err_s})"
-                        meta["scene_tags"] = []
-                        per_panel_meta[local_idx] = meta
-                    continue
-
-                # Apply results
-                by_idx = {}
-                for it in items or []:
-                    try:
-                        pidx = int(it.get("panel_idx"))
-                    except Exception:
-                        continue
-                    by_idx[pidx] = it
-
-                for local_idx, _ in batch:
-                    meta = per_panel_meta[local_idx]
-                    it = by_idx.get(local_idx)
-                    if isinstance(it, dict):
-                        meta["scene_caption"] = (it.get("caption") or "").strip()
-                        tags = it.get("tags") if isinstance(it.get("tags"), list) else []
-                        meta["scene_tags"] = [str(x).strip().lower() for x in tags if str(x).strip()]
-                        ck = gemini_batch_keys.get(local_idx)
-                        if args.cache and ck:
-                            gemini_cache[ck] = {"caption": meta["scene_caption"], "tags": meta["scene_tags"]}
-                    else:
-                        # Force AUTO fallback if Gemini didn't return this panel.
-                        if scene_provider == "auto":
-                            meta["scene_caption"] = "ERROR: Gemini returned no item for this panel"
-                            meta["scene_tags"] = []
-                    per_panel_meta[local_idx] = meta
-
-        # Auto fallback for missing Gemini captions
-        if scene_provider == "auto":
-            for local_idx, meta in enumerate(per_panel_meta):
-                if (meta.get("scene_caption") or "").strip() and not str(meta.get("scene_caption")).startswith("ERROR:"):
-                    continue
-                crop_rel = meta["crop_path"]
-                crop_img = Image.open(out_root / crop_rel).convert("RGB")
-                try:
-                    caption = demo._ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=demo._ollama_caption_prompt(),
-                        image=crop_img,
-                        max_tokens=128,
-                        temperature=0.2,
-                        timeout_s=120,
-                    )
-                except Exception as e:
-                    caption = f"ERROR: {e}"
-                meta["scene_caption"] = (caption or "").strip()
-                try:
-                    tags_text = demo._ollama_generate_text(
-                        host=args.ollama_host,
-                        model=args.ollama_model,
-                        prompt=demo._ollama_tags_prompt(meta["scene_caption"]),
-                        image=None,
-                        max_tokens=64,
-                        temperature=0.0,
-                        timeout_s=120,
-                    )
-                    tags, _ = demo._parse_scene_labels(tags_text)
-                    meta["scene_tags"] = tags
-                except Exception:
-                    pass
-                per_panel_meta[local_idx] = meta
-
         panels_out.extend(per_panel_meta)
-
-    if args.cache and gemini_rotator is not None:
-        try:
-            cache_path.write_text(json.dumps(demo._to_jsonable(gemini_cache), ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            pass
 
     storyboard = {
         "version": "v1",
@@ -423,7 +339,7 @@ def main() -> None:
     storyboard_path.write_text(json.dumps(demo._to_jsonable(storyboard), ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Wrote: {storyboard_path}")
     print(f"- panels: {len(panels_out)}")
-    print(f"- crops: {panels_dir}")
+    print(f"- crops: {pages_dir}")
 
 
 if __name__ == "__main__":

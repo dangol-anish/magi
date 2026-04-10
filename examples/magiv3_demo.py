@@ -413,7 +413,8 @@ def _ollama_generate_text(
             "num_predict": int(max_tokens),
         },
     }
-    r = requests.post(f"{host.rstrip('/')}/api/generate", json=payload, timeout=timeout_s)
+    # Separate connect + read timeouts; big VLMs can take a while on first load.
+    r = requests.post(f"{host.rstrip('/')}/api/generate", json=payload, timeout=(10, timeout_s))
     r.raise_for_status()
     data = r.json()
     return (data.get("response") or "").strip()
@@ -783,6 +784,11 @@ def main() -> None:
     parser.add_argument("--attn", default="eager", choices=["auto", "eager", "sdpa"])
     parser.add_argument("--out", default="out")
     parser.add_argument("--no-viz", action="store_true")
+    parser.add_argument(
+        "--skip-ocr",
+        action="store_true",
+        help="Skip Magi OCR (`predict_ocr`). Useful if OCR is already computed and you only need scene labels.",
+    )
     parser.add_argument("--panel-captions", action="store_true")
     parser.add_argument("--panel-grounding", action="store_true")
     parser.add_argument("--max-panels", type=int, default=6)
@@ -807,6 +813,12 @@ def main() -> None:
     parser.add_argument("--ollama-host", default="http://127.0.0.1:11434")
     parser.add_argument("--ollama-model", default="llava-phi3:latest")
     parser.add_argument("--scene-tokens", type=int, default=96)
+    parser.add_argument(
+        "--ollama-timeout",
+        type=int,
+        default=600,
+        help="Ollama read timeout in seconds for `/api/generate` (increase for large VLMs like qwen2.5vl:7b).",
+    )
     parser.add_argument("--gemini-model", default="gemini-2.5-flash")
     parser.add_argument(
         "--gemini-key-env",
@@ -847,10 +859,26 @@ def main() -> None:
     image_paths = _collect_image_paths(args.images)
     images = [_read_image_rgb_np(p) for p in image_paths]
 
-    with torch.no_grad():
-        det_assoc = model.predict_detections_and_associations(images, processor)
-        ocr = model.predict_ocr(images, processor)
+    det_assoc = []
+    ocr = []
+    total = len(images)
 
+    with torch.no_grad():
+        for i, img in enumerate(images):
+            print(f"[{i+1}/{total}] Detecting panels & characters: {Path(image_paths[i]).name}")
+            da = model.predict_detections_and_associations([img], processor)
+            det_assoc.extend(da)
+
+            if args.skip_ocr:
+                ocr.append({"ocr_texts": [], "bboxes": []})
+            else:
+                print(f"[{i+1}/{total}] Running OCR: {Path(image_paths[i]).name}")
+                oc = model.predict_ocr([img], processor)
+                ocr.extend(oc)
+
+            print(f"[{i+1}/{total}] Done ✓")
+
+        
     out_dir = Path(args.out).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -858,8 +886,9 @@ def main() -> None:
     transcript_lines_all: list[str] = []
 
     for page_idx, (image_path, page_result, page_ocr) in enumerate(zip(image_paths, det_assoc, ocr)):
+        print(f"\n[Page {page_idx+1}/{len(image_paths)}] Post-processing: {Path(image_path).name}")
         page_result = page_result if isinstance(page_result, dict) else {"result": page_result}
-        ocr_texts = _extract_ocr_texts(page_ocr)
+        ocr_texts = _extract_ocr_texts(page_ocr) if not args.skip_ocr else []
 
         page_out = {
             "image_path": image_path,
@@ -872,13 +901,16 @@ def main() -> None:
             encoding="utf-8",
         )
 
-        transcript_items, transcript_txt = _build_transcript(page_result, ocr_texts)
-        for item in transcript_items:
-            item["page_idx"] = page_idx
-            transcript_items_all.append(item)
-        if transcript_txt:
-            transcript_lines_all.append(f"# page {page_idx}")
-            transcript_lines_all.append(transcript_txt.rstrip("\n"))
+        transcript_items = []
+        transcript_txt = ""
+        if not args.skip_ocr:
+            transcript_items, transcript_txt = _build_transcript(page_result, ocr_texts)
+            for item in transcript_items:
+                item["page_idx"] = page_idx
+                transcript_items_all.append(item)
+            if transcript_txt:
+                transcript_lines_all.append(f"# page {page_idx}")
+                transcript_lines_all.append(transcript_txt.rstrip("\n"))
 
         if not args.no_viz and isinstance(page_result, dict):
             _draw_overlay(image_path, page_result, str(out_dir / f"page_{page_idx}_annotated.png"))
@@ -908,6 +940,7 @@ def main() -> None:
                             prompt=caption_prompt,
                             image=crop,
                             max_tokens=max(16, args.scene_tokens),
+                            timeout_s=max(30, int(args.ollama_timeout)),
                         )
                     except Exception as e:
                         caption_text = f"ERROR: {e}"
@@ -920,6 +953,7 @@ def main() -> None:
                             image=None,
                             max_tokens=64,
                             temperature=0.0,
+                            timeout_s=max(30, int(args.ollama_timeout)),
                         )
                     except Exception as e:
                         tags_text = f"ERROR: {e}"
@@ -1109,6 +1143,7 @@ def main() -> None:
                                     prompt=caption_prompt,
                                     image=crop,
                                     max_tokens=max(16, args.scene_tokens),
+                                    timeout_s=max(30, int(args.ollama_timeout)),
                                 )
                             except Exception as e:
                                 caption_text = f"ERROR: {e}"
@@ -1120,6 +1155,7 @@ def main() -> None:
                                     image=None,
                                     max_tokens=64,
                                     temperature=0.0,
+                                    timeout_s=max(30, int(args.ollama_timeout)),
                                 )
                             except Exception as e:
                                 tags_text = f"ERROR: {e}"
