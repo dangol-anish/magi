@@ -6,3 +6,8 @@ __pycache__/
 .DS_Store
 .env
 .env.*
+
+# Audio generation artifacts
+video-pipeline/audio-generation/.cache/
+video-pipeline/audio-generation/input/
+video-pipeline/audio-generation/output/

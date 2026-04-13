@@ -90,6 +90,17 @@ Outputs:
 
 - `final/recap_blog.json`
 
+## Stage 5 (Optional): TTS audio generation for recap JSONs (Kokoro)
+
+If you have a recap JSON in the “Claude recap format” (page recap + per-panel sentences),
+you can generate WAV audio and attach `audio_path` fields for downstream video editing:
+
+```bash
+python video-pipeline/audio-generation/generate_audio.py \
+  --input video-pipeline/audio-generation/input \
+  --output video-pipeline/audio-generation/output
+```
+
 ### Using Ollama instead (local models)
 
 ```bash

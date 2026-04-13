@@ -1,0 +1,5 @@
+numpy
+# Recommended (works well on Python 3.13):
+pykokoro
+# Optional fallback:
+kokoro
