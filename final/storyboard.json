@@ -1,0 +1,2151 @@
+{
+  "version": "v1",
+  "created_at": "2026-04-12T15:18:59Z",
+  "chapter_id": "chapter_1",
+  "source_images": [
+    "/Users/anishdangol/Desktop/chapter_1/page_1.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_10.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_11.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_12.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_13.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_14.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_15.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_16.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_17.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_18.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_19.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_2.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_20.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_21.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_22.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_23.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_24.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_25.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_26.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_27.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_28.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_29.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_3.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_30.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_31.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_32.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_33.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_34.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_35.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_4.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_5.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_6.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_7.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_8.jpg",
+    "/Users/anishdangol/Desktop/chapter_1/page_9.jpg"
+  ],
+  "panels": [
+    {
+      "panel_id": "chapter_1_p000_n000_661d7a4bb0",
+      "page_idx": 0,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        718.2000122070312,
+        2995.5
+      ],
+      "crop_path": "final/pages/000/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Other kids are being sponsored by nobles!",
+          "bbox": [
+            127.80000305175781,
+            817.5,
+            348.1200256347656,
+            991.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "No one's going to take you who's Going to reach is soon!",
+          "bbox": [
+            326.52001953125,
+            1519.5,
+            632.52001953125,
+            1696.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "So useless!",
+          "bbox": [
+            134.27999877929688,
+            1873.5,
+            299.8800048828125,
+            1963.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "So disgusting!",
+          "bbox": [
+            380.52001953125,
+            2326.5,
+            603.7200317382812,
+            2419.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Got",
+          "bbox": [
+            250.20001220703125,
+            2113.5,
+            330.84002685546875,
+            2173.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p001_n000_1764fb2dd0",
+      "page_idx": 1,
+      "bbox": [
+        54.36000061035156,
+        1.5,
+        719.6400146484375,
+        2989.5
+      ],
+      "crop_path": "final/pages/001/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "E... elke...?",
+          "bbox": [
+            478.4400329589844,
+            820.5,
+            599.4000244140625,
+            895.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "E...",
+          "bbox": [
+            400.6800231933594,
+            658.5,
+            455.4000244140625,
+            706.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "......",
+          "bbox": [
+            385.5600280761719,
+            1306.5,
+            449.6400146484375,
+            1339.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "You don't know? Ekedomia...",
+          "bbox": [
+            153.0,
+            1456.5,
+            360.3600158691406,
+            1567.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "How can I know the name of the nobleman when I lied only in an orphanage...?!",
+          "bbox": [
+            284.760009765625,
+            2020.5,
+            555.4800415039062,
+            2206.5
+          ],
+          "speaker": "char_1"
+        },
+        {
+          "text": "I-I'm sorry...",
+          "bbox": [
+            117.00000762939453,
+            2569.5,
+            325.08001708984375,
+            2614.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p001_n001_6b896e62a5",
+      "page_idx": 1,
+      "bbox": [
+        207.00001525878906,
+        1.5,
+        644.760009765625,
+        682.5
+      ],
+      "crop_path": "final/pages/001/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "E...",
+          "bbox": [
+            400.6800231933594,
+            658.5,
+            455.4000244140625,
+            706.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p002_n000_c174af7cb5",
+      "page_idx": 2,
+      "bbox": [
+        0.36000001430511475,
+        2.374000072479248,
+        717.4800415039062,
+        4731.38232421875
+      ],
+      "crop_path": "final/pages/002/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p003_n000_b963561fc7",
+      "page_idx": 3,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        681.4800415039062,
+        1210.5
+      ],
+      "crop_path": "final/pages/003/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "How did the war end?",
+          "bbox": [
+            410.0400085449219,
+            298.5,
+            601.5599975585938,
+            373.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "I know that, too!",
+          "bbox": [
+            177.48001098632812,
+            538.5,
+            327.96002197265625,
+            613.5
+          ],
+          "speaker": "char_1"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p003_n001_99bebd4a5f",
+      "page_idx": 3,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        717.4800415039062,
+        2989.5
+      ],
+      "crop_path": "final/pages/003/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "How did the war end?",
+          "bbox": [
+            410.0400085449219,
+            298.5,
+            601.5599975585938,
+            373.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "I know that, too!",
+          "bbox": [
+            177.48001098632812,
+            538.5,
+            327.96002197265625,
+            613.5
+          ],
+          "speaker": "char_1"
+        },
+        {
+          "text": "A very powerful knight of the Empire defeated the villain!",
+          "bbox": [
+            212.760009765625,
+            1306.5,
+            513.7200317382812,
+            1414.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Blonde hair,",
+          "bbox": [
+            262.44000244140625,
+            1975.5,
+            379.8000183105469,
+            2050.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Golden eyes,",
+          "bbox": [
+            86.76000213623047,
+            2347.5,
+            208.44000244140625,
+            2425.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "And a beautiful appearance,",
+          "bbox": [
+            133.5600128173828,
+            2650.5,
+            320.760009765625,
+            2761.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p004_n000_1bf0fbdfd3",
+      "page_idx": 4,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        714.6000366210938,
+        709.5
+      ],
+      "crop_path": "final/pages/004/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "But murders the enemy relentlessly...",
+          "bbox": [
+            396.3600158691406,
+            592.5,
+            621.0,
+            706.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p004_n001_1bdc035bc2",
+      "page_idx": 4,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        716.760009765625,
+        2986.5
+      ],
+      "crop_path": "final/pages/004/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "But murders the enemy relentlessly...",
+          "bbox": [
+            396.3600158691406,
+            592.5,
+            621.0,
+            706.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "ST: Huh...?",
+          "bbox": [
+            348.1200256347656,
+            1174.5,
+            438.84002685546875,
+            1216.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Okay.",
+          "bbox": [
+            421.5600280761719,
+            1981.5,
+            509.4000244140625,
+            2026.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p004_n002_abf18613e6",
+      "page_idx": 4,
+      "bbox": [
+        143.63999938964844,
+        1195.5,
+        531.0,
+        1855.5
+      ],
+      "crop_path": "final/pages/004/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "ST: Huh...?",
+          "bbox": [
+            348.1200256347656,
+            1174.5,
+            438.84002685546875,
+            1216.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p005_n000_b13b373734",
+      "page_idx": 5,
+      "bbox": [
+        63.720001220703125,
+        1.5,
+        719.6400146484375,
+        862.5
+      ],
+      "crop_path": "final/pages/005/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p005_n001_c22896db74",
+      "page_idx": 5,
+      "bbox": [
+        235.0800018310547,
+        1402.5,
+        624.6000366210938,
+        2176.5
+      ],
+      "crop_path": "final/pages/005/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p005_n002_2b77aa5271",
+      "page_idx": 5,
+      "bbox": [
+        242.28001403808594,
+        2203.5,
+        528.8400268554688,
+        2509.5
+      ],
+      "crop_path": "final/pages/005/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Come down.",
+          "bbox": [
+            294.84002685546875,
+            2374.5,
+            480.6000061035156,
+            2422.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p006_n000_250a228788",
+      "page_idx": 6,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        716.0400390625,
+        1849.5
+      ],
+      "crop_path": "final/pages/006/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "This is where you will live in the future.",
+          "bbox": [
+            385.5600280761719,
+            100.5,
+            599.4000244140625,
+            214.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Archduke of Ekedomia",
+          "bbox": [
+            30.600000381469727,
+            1567.5,
+            346.6800231933594,
+            1612.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p006_n001_73b15e88a4",
+      "page_idx": 6,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        717.4800415039062,
+        2986.5
+      ],
+      "crop_path": "final/pages/006/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "This is where you will live in the future.",
+          "bbox": [
+            385.5600280761719,
+            100.5,
+            599.4000244140625,
+            214.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Archduke of Ekedomia",
+          "bbox": [
+            30.600000381469727,
+            1567.5,
+            346.6800231933594,
+            1612.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "What do you mean?!",
+          "bbox": [
+            393.4800109863281,
+            2101.5,
+            572.760009765625,
+            2182.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "What Do You Mean Foster Support? You're giving her the last name of Ekdomia?!",
+          "bbox": [
+            184.6800079345703,
+            2740.5,
+            447.4800109863281,
+            2959.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p007_n000_285edefead",
+      "page_idx": 7,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        712.4400024414062,
+        856.5
+      ],
+      "crop_path": "final/pages/007/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Roel, butler of Ekedomia",
+          "bbox": [
+            420.1200256347656,
+            106.5,
+            632.52001953125,
+            184.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p007_n001_545a8b9431",
+      "page_idx": 7,
+      "bbox": [
+        54.36000061035156,
+        1558.5,
+        667.0800170898438,
+        2440.5
+      ],
+      "crop_path": "final/pages/007/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "If it's easier support, it's that, right?",
+          "bbox": [
+            447.4800109863281,
+            1819.5,
+            680.760009765625,
+            1972.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Oh, the puppet show of aristocrats... is that right?",
+          "bbox": [
+            64.44000244140625,
+            1972.5,
+            137.16000366210938,
+            2047.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p007_n002_a65689f10f",
+      "page_idx": 7,
+      "bbox": [
+        193.32000732421875,
+        2440.5,
+        679.3200073242188,
+        2998.5
+      ],
+      "crop_path": "final/pages/007/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "That's right! It's very bad taste though",
+          "bbox": [
+            262.44000244140625,
+            2554.5,
+            495.0000305175781,
+            2677.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p008_n000_27d5e76210",
+      "page_idx": 8,
+      "bbox": [
+        0.36000001430511475,
+        524.6845092773438,
+        717.4800415039062,
+        3899.049560546875
+      ],
+      "crop_path": "final/pages/008/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "After the war, there were many orphans...",
+          "bbox": [
+            344.52001953125,
+            610.5065307617188,
+            518.760009765625,
+            758.7445068359375
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "The aristocrats took half",
+          "bbox": [
+            459.0000305175781,
+            895.2794799804688,
+            649.800048828125,
+            1012.3095092773438
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "And red them taught them to make them look like noble child Ren...",
+          "bbox": [
+            86.04000091552734,
+            1300.9835205078125,
+            320.760009765625,
+            1519.439453125
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Where people bras about each other like pets in society?",
+          "bbox": [
+            431.6400146484375,
+            2295.738525390625,
+            667.800048828125,
+            2479.08544921875
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Isn't for a proper show",
+          "bbox": [
+            291.96002197265625,
+            2092.886474609375,
+            457.5600280761719,
+            2248.926513671875
+          ],
+          "speaker": "char_1"
+        },
+        {
+          "text": "would he do that though...",
+          "bbox": [
+            121.32000732421875,
+            3247.58251953125,
+            360.3600158691406,
+            3333.404541015625
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p009_n000_43895cd7f2",
+      "page_idx": 9,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        716.760009765625,
+        1129.5
+      ],
+      "crop_path": "final/pages/009/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "To take responsibility and complete the procedure.",
+          "bbox": [
+            283.32000732421875,
+            181.5,
+            521.6400146484375,
+            328.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Julius!",
+          "bbox": [
+            111.24000549316406,
+            496.5,
+            218.52000427246094,
+            541.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p009_n001_1b754d309b",
+      "page_idx": 9,
+      "bbox": [
+        117.00000762939453,
+        1960.5,
+        601.5599975585938,
+        2752.5
+      ],
+      "crop_path": "final/pages/009/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "What's your name?",
+          "bbox": [
+            436.6800231933594,
+            1939.5,
+            616.6800537109375,
+            2017.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p010_n000_4dfe460a37",
+      "page_idx": 10,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        706.6800537109375,
+        922.5
+      ],
+      "crop_path": "final/pages/010/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "All right. Ms. Mint.",
+          "bbox": [
+            461.8800048828125,
+            85.5,
+            614.52001953125,
+            163.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Do you have any connection with your excellency?",
+          "bbox": [
+            294.84002685546875,
+            538.5,
+            533.8800048828125,
+            688.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "The reason why your excellingly sponsored young lady...",
+          "bbox": [
+            63.720001220703125,
+            772.5,
+            315.7200012207031,
+            919.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p010_n001_4b2778adf7",
+      "page_idx": 10,
+      "bbox": [
+        0.36000001430511475,
+        901.5,
+        710.280029296875,
+        1441.5
+      ],
+      "crop_path": "final/pages/010/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p010_n002_c347561927",
+      "page_idx": 10,
+      "bbox": [
+        0.36000001430511475,
+        1402.5,
+        715.3200073242188,
+        2998.5
+      ],
+      "crop_path": "final/pages/010/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "?!?!",
+          "bbox": [
+            575.6400146484375,
+            2092.5,
+            675.0,
+            2161.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "?!?!",
+          "bbox": [
+            182.52000427246094,
+            1948.5,
+            283.32000732421875,
+            2020.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p011_n000_2df623d34c",
+      "page_idx": 11,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        716.760009765625,
+        1339.5
+      ],
+      "crop_path": "final/pages/011/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p011_n001_f041bf36ac",
+      "page_idx": 11,
+      "bbox": [
+        0.36000001430511475,
+        1945.5,
+        714.6000366210938,
+        2398.5
+      ],
+      "crop_path": "final/pages/011/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p011_n002_4ab0907dca",
+      "page_idx": 11,
+      "bbox": [
+        0.36000001430511475,
+        2767.5,
+        714.6000366210938,
+        2998.5
+      ],
+      "crop_path": "final/pages/011/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p012_n000_2db8efe0cf",
+      "page_idx": 12,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        718.2000122070312,
+        2992.5
+      ],
+      "crop_path": "final/pages/012/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "...I don't think you know.",
+          "bbox": [
+            246.60000610351562,
+            286.5,
+            486.3600158691406,
+            361.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Let's wash up first and then talk.",
+          "bbox": [
+            160.92001342773438,
+            940.5,
+            357.4800109863281,
+            1045.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Hello!",
+          "bbox": [
+            271.08001708984375,
+            2032.5,
+            374.760009765625,
+            2077.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p013_n000_fde252c8c9",
+      "page_idx": 13,
+      "bbox": [
+        0.36000001430511475,
+        2.947000026702881,
+        717.4800415039062,
+        5867.47705078125
+      ],
+      "crop_path": "final/pages/013/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p013_n001_1e2f90c5c5",
+      "page_idx": 13,
+      "bbox": [
+        0.36000001430511475,
+        4753.51123046875,
+        714.6000366210938,
+        5301.65283203125
+      ],
+      "crop_path": "final/pages/013/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p014_n000_088f26f20a",
+      "page_idx": 14,
+      "bbox": [
+        0.36000001430511475,
+        154.5,
+        668.52001953125,
+        520.5
+      ],
+      "crop_path": "final/pages/014/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p014_n001_a61913487a",
+      "page_idx": 14,
+      "bbox": [
+        0.36000001430511475,
+        154.5,
+        717.4800415039062,
+        2998.5
+      ],
+      "crop_path": "final/pages/014/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "I'll wipe you gently and thoroughly.",
+          "bbox": [
+            315.7200012207031,
+            1309.5,
+            522.3600463867188,
+            1423.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "No, miss",
+          "bbox": [
+            191.16000366210938,
+            1099.5,
+            348.1200256347656,
+            1144.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p015_n000_08504462eb",
+      "page_idx": 15,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        718.2000122070312,
+        2989.5
+      ],
+      "crop_path": "final/pages/015/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "It's hot chocolate.",
+          "bbox": [
+            387.0000305175781,
+            445.5,
+            561.2400512695312,
+            523.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "It may be a little hot, so be careful.",
+          "bbox": [
+            398.52001953125,
+            1996.5,
+            618.1199951171875,
+            2110.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Now, please be comfortable.",
+          "bbox": [
+            258.1199951171875,
+            2791.5,
+            470.52001953125,
+            2905.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p016_n000_7fd1cfe5c0",
+      "page_idx": 16,
+      "bbox": [
+        42.12000274658203,
+        1.5,
+        673.5599975585938,
+        1717.5
+      ],
+      "crop_path": "final/pages/016/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Yes...",
+          "bbox": [
+            243.00001525878906,
+            238.5,
+            330.84002685546875,
+            283.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Hot Chocolate....?",
+          "bbox": [
+            177.48001098632812,
+            1597.5,
+            351.7200012207031,
+            1705.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p016_n001_2341e7f14f",
+      "page_idx": 16,
+      "bbox": [
+        0.36000001430511475,
+        1717.5,
+        693.0,
+        2407.5
+      ],
+      "crop_path": "final/pages/016/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p017_n000_ae422b4792",
+      "page_idx": 17,
+      "bbox": [
+        14.760000228881836,
+        1.5,
+        716.760009765625,
+        409.5
+      ],
+      "crop_path": "final/pages/017/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p017_n001_f13ca6dfff",
+      "page_idx": 17,
+      "bbox": [
+        33.47999954223633,
+        892.5,
+        714.6000366210938,
+        1351.5
+      ],
+      "crop_path": "final/pages/017/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p017_n002_45d7609fe2",
+      "page_idx": 17,
+      "bbox": [
+        155.16000366210938,
+        2056.5,
+        679.3200073242188,
+        2983.5
+      ],
+      "crop_path": "final/pages/017/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "My tongue is melting!",
+          "bbox": [
+            250.20001220703125,
+            2113.5,
+            421.5600280761719,
+            2194.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "It's hot.",
+          "bbox": [
+            525.9600219726562,
+            2839.5,
+            646.2000122070312,
+            2887.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n000_67e184ab50",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        2.494499921798706,
+        716.760009765625,
+        4966.54931640625
+      ],
+      "crop_path": "final/pages/018/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n001_5c477c556b",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        631.1084594726562,
+        671.4000244140625,
+        1159.9425048828125
+      ],
+      "crop_path": "final/pages/018/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n002_bee9f8c32c",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        631.1084594726562,
+        672.1200561523438,
+        1154.9534912109375
+      ],
+      "crop_path": "final/pages/018/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n003_a0e8b5e330",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        1893.325439453125,
+        714.6000366210938,
+        2631.697509765625
+      ],
+      "crop_path": "final/pages/018/panels/003/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n004_a67b9ea287",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        1908.29248046875,
+        712.4400024414062,
+        2631.697509765625
+      ],
+      "crop_path": "final/pages/018/panels/004/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n005_486e8ddb47",
+      "page_idx": 18,
+      "bbox": [
+        193.32000732421875,
+        3170.509521484375,
+        513.0,
+        3524.728271484375
+      ],
+      "crop_path": "final/pages/018/panels/005/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n006_5587c24926",
+      "page_idx": 18,
+      "bbox": [
+        0.36000001430511475,
+        3180.4873046875,
+        716.760009765625,
+        4986.50537109375
+      ],
+      "crop_path": "final/pages/018/panels/006/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p018_n007_35b61f1566",
+      "page_idx": 18,
+      "bbox": [
+        193.32000732421875,
+        3180.4873046875,
+        513.0,
+        3529.71728515625
+      ],
+      "crop_path": "final/pages/018/panels/007/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p019_n000_1bb29a4368",
+      "page_idx": 19,
+      "bbox": [
+        0.36000001430511475,
+        343.5,
+        716.0400390625,
+        1966.5
+      ],
+      "crop_path": "final/pages/019/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p019_n001_cd47c72ff5",
+      "page_idx": 19,
+      "bbox": [
+        0.36000001430511475,
+        2554.5,
+        714.6000366210938,
+        2998.5
+      ],
+      "crop_path": "final/pages/019/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p020_n000_79923de32d",
+      "page_idx": 20,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        716.760009765625,
+        598.5
+      ],
+      "crop_path": "final/pages/020/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "!!!",
+          "bbox": [
+            336.6000061035156,
+            64.5,
+            412.20001220703125,
+            142.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p020_n001_13edd86682",
+      "page_idx": 20,
+      "bbox": [
+        121.32000732421875,
+        697.5,
+        582.1199951171875,
+        1600.5
+      ],
+      "crop_path": "final/pages/020/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p020_n002_2f6d7692c4",
+      "page_idx": 20,
+      "bbox": [
+        0.36000001430511475,
+        2800.5,
+        706.6800537109375,
+        2998.5
+      ],
+      "crop_path": "final/pages/020/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p021_n000_2a89912552",
+      "page_idx": 21,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        712.4400024414062,
+        397.5
+      ],
+      "crop_path": "final/pages/021/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Why am I so stupid?",
+          "bbox": [
+            608.760009765625,
+            88.5,
+            689.4000244140625,
+            193.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "I made mistakes in my dream",
+          "bbox": [
+            531.7200317382812,
+            214.5,
+            685.0800170898438,
+            337.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p021_n001_c188c7319e",
+      "page_idx": 21,
+      "bbox": [
+        83.16000366210938,
+        361.5,
+        379.8000183105469,
+        673.5
+      ],
+      "crop_path": "final/pages/021/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "and am apologising while crying...!",
+          "bbox": [
+            153.0,
+            475.5,
+            312.1200256347656,
+            553.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p021_n002_18abe9e147",
+      "page_idx": 21,
+      "bbox": [
+        193.32000732421875,
+        901.5,
+        667.0800170898438,
+        1489.5
+      ],
+      "crop_path": "final/pages/021/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "raise your head.",
+          "bbox": [
+            398.52001953125,
+            1021.5,
+            636.1199951171875,
+            1096.5
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "Get up.",
+          "bbox": [
+            236.52000427246094,
+            1270.5,
+            477.72003173828125,
+            1378.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p021_n003_63f0ea8a6f",
+      "page_idx": 21,
+      "bbox": [
+        93.96000671386719,
+        2683.5,
+        601.5599975585938,
+        2998.5
+      ],
+      "crop_path": "final/pages/021/panels/003/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p022_n000_a6351b5002",
+      "page_idx": 22,
+      "bbox": [
+        0.36000001430511475,
+        2.296999931335449,
+        717.4800415039062,
+        4582.5146484375
+      ],
+      "crop_path": "final/pages/022/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p023_n000_1896157a8d",
+      "page_idx": 23,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        717.4800415039062,
+        2989.5
+      ],
+      "crop_path": "final/pages/023/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Don't do this again.",
+          "bbox": [
+            261.7200012207031,
+            886.5,
+            425.8800048828125,
+            964.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Yes. I'm really sorry.",
+          "bbox": [
+            405.0000305175781,
+            1336.5,
+            531.0,
+            1447.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "So please...",
+          "bbox": [
+            473.4000244140625,
+            1600.5,
+            657.7200317382812,
+            1645.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "You didn't understand me.",
+          "bbox": [
+            480.6000061035156,
+            2062.5,
+            664.2000122070312,
+            2176.5
+          ],
+          "speaker": "char_1"
+        },
+        {
+          "text": "You're the one who's going to be staying in Elkedinia's castle.",
+          "bbox": [
+            82.44000244140625,
+            2614.5,
+            314.2799987792969,
+            2797.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "This means not to be sarcastic to be careful to be a little castle.",
+          "bbox": [
+            229.32000732421875,
+            2908.5,
+            489.96002197265625,
+            2998.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p023_n001_b32ebcf84a",
+      "page_idx": 23,
+      "bbox": [
+        95.4000015258789,
+        1.5,
+        603.0,
+        505.5
+      ],
+      "crop_path": "final/pages/023/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p024_n000_e9e8d64773",
+      "page_idx": 24,
+      "bbox": [
+        191.8800048828125,
+        1.5,
+        639.0,
+        862.5
+      ],
+      "crop_path": "final/pages/024/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Just because the carpet is dirty.",
+          "bbox": [
+            221.40000915527344,
+            1.5,
+            495.0000305175781,
+            61.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "Do you get it?",
+          "bbox": [
+            425.8800048828125,
+            751.5,
+            549.0,
+            829.5
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p024_n001_ee273c376d",
+      "page_idx": 24,
+      "bbox": [
+        0.36000001430511475,
+        1321.5,
+        696.6000366210938,
+        1915.5
+      ],
+      "crop_path": "final/pages/024/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p024_n002_a4ef9f0408",
+      "page_idx": 24,
+      "bbox": [
+        43.560001373291016,
+        2470.5,
+        657.7200317382812,
+        2998.5
+      ],
+      "crop_path": "final/pages/024/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "Aren't I the wrong person?",
+          "bbox": [
+            488.52001953125,
+            2770.5,
+            648.3600463867188,
+            2887.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "I knew it...",
+          "bbox": [
+            351.0,
+            2596.5,
+            509.4000244140625,
+            2644.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p025_n000_e2c2318165",
+      "page_idx": 25,
+      "bbox": [
+        25.560001373291016,
+        2.375999927520752,
+        719.6400146484375,
+        4735.36767578125
+      ],
+      "crop_path": "final/pages/025/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p025_n001_26ee3c538f",
+      "page_idx": 25,
+      "bbox": [
+        39.96000289916992,
+        2.375999927520752,
+        649.800048828125,
+        572.615966796875
+      ],
+      "crop_path": "final/pages/025/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p025_n002_87add51a8e",
+      "page_idx": 25,
+      "bbox": [
+        42.12000274658203,
+        2.375999927520752,
+        649.800048828125,
+        582.1199951171875
+      ],
+      "crop_path": "final/pages/025/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p025_n003_72410f1673",
+      "page_idx": 25,
+      "bbox": [
+        42.12000274658203,
+        1893.6719970703125,
+        714.6000366210938,
+        2815.559814453125
+      ],
+      "crop_path": "final/pages/025/panels/003/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p026_n000_86c089fe2a",
+      "page_idx": 26,
+      "bbox": [
+        0.36000001430511475,
+        1.0920000076293945,
+        718.2000122070312,
+        2176.35595703125
+      ],
+      "crop_path": "final/pages/026/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "But I can't do anything. I'm useless...",
+          "bbox": [
+            57.96000289916992,
+            95.00399780273438,
+            291.96002197265625,
+            204.20399475097656
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "I don't deserved to be loved...",
+          "bbox": [
+            259.55999755859375,
+            621.3480224609375,
+            460.4400329589844,
+            726.1799926757812
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "...Why",
+          "bbox": [
+            499.32000732421875,
+            1075.6199951171875,
+            613.800048828125,
+            1119.300048828125
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "was I born like this?",
+          "bbox": [
+            116.2800064086914,
+            1464.3720703125,
+            268.9200134277344,
+            1532.0760498046875
+          ],
+          "speaker": "char_0"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p027_n000_b893156db0",
+      "page_idx": 27,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        717.4800415039062,
+        2188.5
+      ],
+      "crop_path": "final/pages/027/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "A few years ago",
+          "bbox": [
+            417.2400207519531,
+            55.5,
+            649.800048828125,
+            106.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "HAAH haah",
+          "bbox": [
+            106.20000457763672,
+            940.5,
+            230.760009765625,
+            1048.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "HAAAH",
+          "bbox": [
+            466.20001220703125,
+            2149.5,
+            567.7200317382812,
+            2203.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p027_n001_5978ebd9c7",
+      "page_idx": 27,
+      "bbox": [
+        0.36000001430511475,
+        2152.5,
+        714.6000366210938,
+        2998.5
+      ],
+      "crop_path": "final/pages/027/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "HAAAH",
+          "bbox": [
+            466.20001220703125,
+            2149.5,
+            567.7200317382812,
+            2203.5
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "HAA4H",
+          "bbox": [
+            349.5600280761719,
+            2446.5,
+            448.9200134277344,
+            2497.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p028_n000_8765d84baa",
+      "page_idx": 28,
+      "bbox": [
+        0.36000001430511475,
+        2.744499921798706,
+        716.760009765625,
+        1907.427490234375
+      ],
+      "crop_path": "final/pages/028/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p028_n001_8fcbbdb329",
+      "page_idx": 28,
+      "bbox": [
+        0.36000001430511475,
+        2.744499921798706,
+        718.2000122070312,
+        4454.3232421875
+      ],
+      "crop_path": "final/pages/028/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p028_n002_0c4016ffd8",
+      "page_idx": 28,
+      "bbox": [
+        0.36000001430511475,
+        4432.3671875,
+        714.6000366210938,
+        5469.78857421875
+      ],
+      "crop_path": "final/pages/028/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p029_n000_71a56cf39d",
+      "page_idx": 29,
+      "bbox": [
+        0.36000001430511475,
+        2.05049991607666,
+        717.4800415039062,
+        4086.646240234375
+      ],
+      "crop_path": "final/pages/029/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p030_n000_70d63abe6e",
+      "page_idx": 30,
+      "bbox": [
+        0.36000001430511475,
+        1.5,
+        718.2000122070312,
+        2989.5
+      ],
+      "crop_path": "final/pages/030/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p031_n000_978b657fdd",
+      "page_idx": 31,
+      "bbox": [
+        0.36000001430511475,
+        1.7589999437332153,
+        718.2000122070312,
+        3502.1689453125
+      ],
+      "crop_path": "final/pages/031/panels/000/panel.png",
+      "ocr_lines": [
+        {
+          "text": "think something's wrong.",
+          "bbox": [
+            505.08001708984375,
+            786.27294921875,
+            555.4800415039062,
+            842.5609741210938
+          ],
+          "speaker": "char_0"
+        },
+        {
+          "text": "I'm riding...",
+          "bbox": [
+            271.08001708984375,
+            1127.5189208984375,
+            455.4000244140625,
+            1247.1309814453125
+          ],
+          "speaker": "unsure"
+        },
+        {
+          "text": "2 carriage... with this person",
+          "bbox": [
+            155.16000366210938,
+            1869.81689453125,
+            325.08001708984375,
+            1919.0689697265625
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p031_n001_f8073606f3",
+      "page_idx": 31,
+      "bbox": [
+        30.600000381469727,
+        117.85299682617188,
+        712.4400024414062,
+        698.322998046875
+      ],
+      "crop_path": "final/pages/031/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p032_n000_c098a281d5",
+      "page_idx": 32,
+      "bbox": [
+        0.36000001430511475,
+        385.5,
+        712.4400024414062,
+        979.5
+      ],
+      "crop_path": "final/pages/032/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p032_n001_61edb7b755",
+      "page_idx": 32,
+      "bbox": [
+        0.36000001430511475,
+        2092.5,
+        714.6000366210938,
+        2854.5
+      ],
+      "crop_path": "final/pages/032/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p033_n000_119e0a3e14",
+      "page_idx": 33,
+      "bbox": [
+        127.80000305175781,
+        544.5,
+        596.52001953125,
+        1447.5
+      ],
+      "crop_path": "final/pages/033/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p033_n001_24edbfc468",
+      "page_idx": 33,
+      "bbox": [
+        387.0000305175781,
+        1828.5,
+        657.7200317382812,
+        2116.5
+      ],
+      "crop_path": "final/pages/033/panels/001/panel.png",
+      "ocr_lines": [
+        {
+          "text": "but this aristocratic...?",
+          "bbox": [
+            432.3600158691406,
+            1936.5,
+            628.9200439453125,
+            2011.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p033_n002_4b4331c391",
+      "page_idx": 33,
+      "bbox": [
+        117.00000762939453,
+        2800.5,
+        613.0800170898438,
+        2998.5
+      ],
+      "crop_path": "final/pages/033/panels/002/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p034_n000_03b91a1631",
+      "page_idx": 34,
+      "bbox": [
+        127.80000305175781,
+        1.5,
+        613.0800170898438,
+        598.5
+      ],
+      "crop_path": "final/pages/034/panels/000/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p034_n001_c74c5538c6",
+      "page_idx": 34,
+      "bbox": [
+        0.36000001430511475,
+        1402.5,
+        716.0400390625,
+        1975.5
+      ],
+      "crop_path": "final/pages/034/panels/001/panel.png",
+      "ocr_lines": [],
+      "scene_caption": "",
+      "scene_tags": []
+    },
+    {
+      "panel_id": "chapter_1_p034_n002_b532af663e",
+      "page_idx": 34,
+      "bbox": [
+        83.16000366210938,
+        2578.5,
+        644.0400390625,
+        2998.5
+      ],
+      "crop_path": "final/pages/034/panels/002/panel.png",
+      "ocr_lines": [
+        {
+          "text": "You will be living in the castle of the Ekldonia family.",
+          "bbox": [
+            157.32000732421875,
+            2683.5,
+            375.4800109863281,
+            2866.5
+          ],
+          "speaker": "unsure"
+        }
+      ],
+      "scene_caption": "",
+      "scene_tags": []
+    }
+  ],
+  "beats": [],
+  "script": []
+}

@@ -1,0 +1,6 @@
+<unsure>: Don't do this again.
+<unsure>: Yes. I'm really sorry.
+<unsure>: So please...
+<char_1>: You didn't understand me.
+<unsure>: You're the one who's going to be staying in Elkedinia's castle.
+<unsure>: This means not to be sarcastic to be careful to be a little castle.

@@ -1,0 +1,3 @@
+<unsure>: ...I don't think you know.
+<char_0>: Let's wash up first and then talk.
+<char_0>: Hello!

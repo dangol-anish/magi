@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 0,
+    "speaker": "char_0",
+    "text": "Roel, butler of Ekedomia",
+    "bbox": [
+      420.1200256347656,
+      106.5,
+      632.52001953125,
+      184.5
+    ],
+    "essential": true
+  }
+]

@@ -1,0 +1,6 @@
+<char_0>: How did the war end?
+<char_1>: I know that, too!
+<unsure>: A very powerful knight of the Empire defeated the villain!
+<char_0>: Blonde hair,
+<char_0>: Golden eyes,
+<unsure>: And a beautiful appearance,

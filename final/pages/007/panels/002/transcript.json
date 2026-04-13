@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 5,
+    "speaker": "unsure",
+    "text": "That's right! It's very bad taste though",
+    "bbox": [
+      262.44000244140625,
+      2554.5,
+      495.0000305175781,
+      2677.5
+    ],
+    "essential": true
+  }
+]

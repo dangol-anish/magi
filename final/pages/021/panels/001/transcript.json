@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 2,
+    "speaker": "char_0",
+    "text": "and am apologising while crying...!",
+    "bbox": [
+      153.0,
+      475.5,
+      312.1200256347656,
+      553.5
+    ],
+    "essential": true
+  }
+]

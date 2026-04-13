@@ -1,0 +1,74 @@
+[
+  {
+    "text_idx": 0,
+    "speaker": "char_0",
+    "text": "How did the war end?",
+    "bbox": [
+      410.0400085449219,
+      298.5,
+      601.5599975585938,
+      373.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 1,
+    "speaker": "char_1",
+    "text": "I know that, too!",
+    "bbox": [
+      177.48001098632812,
+      538.5,
+      327.96002197265625,
+      613.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 2,
+    "speaker": "unsure",
+    "text": "A very powerful knight of the Empire defeated the villain!",
+    "bbox": [
+      212.760009765625,
+      1306.5,
+      513.7200317382812,
+      1414.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 3,
+    "speaker": "char_0",
+    "text": "Blonde hair,",
+    "bbox": [
+      262.44000244140625,
+      1975.5,
+      379.8000183105469,
+      2050.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 4,
+    "speaker": "char_0",
+    "text": "Golden eyes,",
+    "bbox": [
+      86.76000213623047,
+      2347.5,
+      208.44000244140625,
+      2425.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 5,
+    "speaker": "unsure",
+    "text": "And a beautiful appearance,",
+    "bbox": [
+      133.5600128173828,
+      2650.5,
+      320.760009765625,
+      2761.5
+    ],
+    "essential": true
+  }
+]

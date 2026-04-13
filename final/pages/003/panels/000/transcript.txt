@@ -1,0 +1,2 @@
+<char_0>: How did the war end?
+<char_1>: I know that, too!

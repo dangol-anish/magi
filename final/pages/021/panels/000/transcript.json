@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 0,
+    "speaker": "char_0",
+    "text": "Why am I so stupid?",
+    "bbox": [
+      608.760009765625,
+      88.5,
+      689.4000244140625,
+      193.5
+    ],
+    "essential": false
+  },
+  {
+    "text_idx": 1,
+    "speaker": "char_0",
+    "text": "I made mistakes in my dream",
+    "bbox": [
+      531.7200317382812,
+      214.5,
+      685.0800170898438,
+      337.5
+    ],
+    "essential": false
+  }
+]

@@ -23,7 +23,6 @@ def _sha256_png(image: Image.Image) -> str:
 
 
 def _safe_gemini_error(e: Exception) -> str:
-    # Avoid leaking API keys (which may appear in URLs).
     if isinstance(e, requests.HTTPError):
         status = getattr(getattr(e, "response", None), "status_code", None)
         msg = ""
@@ -59,12 +58,11 @@ def main() -> None:
     ap.add_argument("--ollama-host", default="http://127.0.0.1:11434")
     ap.add_argument("--ollama-model", default="llava-phi3:latest")
     ap.add_argument(
-        "--ollama-timeout",
-        type=int,
-        default=600,
+        "--ollama-timeout", type=int, default=600,
         help="Ollama read timeout seconds (first run can be slow while the model loads).",
     )
-    ap.add_argument("--ollama-caption-tokens", type=int, default=128)
+    ap.add_argument("--ollama-caption-tokens", type=int, default=256,   # raised from 128
+                    help="Max tokens for Ollama caption generation (default: 256).")
     ap.add_argument("--ollama-tags-tokens", type=int, default=64)
     ap.add_argument("--gemini-model", default="gemini-2.5-flash")
     ap.add_argument("--gemini-key-env", default="GEMINI_API_KEY")
@@ -72,9 +70,21 @@ def main() -> None:
     ap.add_argument("--gemini-batch-size", type=int, default=6)
     ap.add_argument("--gemini-thinking-budget", type=int, default=0)
     ap.add_argument("--gemini-log-key", action="store_true")
-    ap.add_argument("--cache", action="store_true", help="Enable on-disk Gemini scene cache under final/.cache/.")
-    ap.add_argument("--progress", action="store_true", help="Print progress logs while processing panels.")
-    ap.add_argument("--log-every", type=int, default=1, help="With --progress: print every N processed panels.")
+    ap.add_argument("--cache", action="store_true",
+                    help="Enable on-disk Gemini scene cache under final/.cache/.")
+    ap.add_argument("--progress", action="store_true",
+                    help="Print progress logs while processing panels.")
+    ap.add_argument("--log-every", type=int, default=1,
+                    help="With --progress: print every N processed panels.")
+    ap.add_argument(
+        "--chapter-context",
+        default="",
+        help=(
+            "Optional free-text context about this manga/chapter passed to the vision model. "
+            "Example: 'Shounen action manga. Protagonist has spiky black hair.' "
+            "Leave empty for fully automatic mode. Works for any manga series."
+        ),
+    )
 
     args = ap.parse_args()
 
@@ -89,7 +99,6 @@ def main() -> None:
     if args.cache:
         cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Reuse the demo implementation for providers (keeps prompts/behavior consistent).
     project_root = Path(__file__).resolve().parents[1]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
@@ -107,7 +116,21 @@ def main() -> None:
         print("Scene provider set to 'none'; nothing to do.")
         return
 
-    prompt_version = "v1"
+    # ── Build character hints once from all panels ────────────────────────────
+    # Uses cluster data already in the storyboard — no hardcoded names.
+    # Works for any manga series.
+    character_hints = demo._build_character_hints(
+        panels,
+        chapter_context=(args.chapter_context or "").strip(),
+    )
+    if args.progress and character_hints:
+        print(f"[Stage2] Character hints built from storyboard:\n{character_hints}\n")
+        sys.stdout.flush()
+
+    # Build the caption prompt once (injecting hints)
+    caption_prompt = demo._ollama_caption_prompt(character_hints=character_hints)
+
+    prompt_version = "v2"   # bump when prompt changes to invalidate old Gemini cache
 
     gemini_rotator = None
     gemini_cache: dict = {}
@@ -136,7 +159,7 @@ def main() -> None:
             return False
         return True
 
-    # Gemini pass (optional): fill scene_caption/scene_tags for uncached panels in batches
+    # ── Gemini pass ───────────────────────────────────────────────────────────
     if gemini_rotator is not None and scene_provider in {"gemini", "auto"}:
         gemini_batch: list[tuple[int, Image.Image]] = []
         gemini_batch_keys: dict[int, str] = {}
@@ -149,10 +172,10 @@ def main() -> None:
             crop_rel = p.get("crop_path")
             if not isinstance(crop_rel, str) or not crop_rel.strip():
                 continue
-            crop_path = out_root / crop_rel
-            if not crop_path.exists():
+            crop_path_full = out_root / crop_rel
+            if not crop_path_full.exists():
                 continue
-            crop = Image.open(crop_path).convert("RGB")
+            crop = Image.open(crop_path_full).convert("RGB")
             crop_hash = _sha256_png(crop)
             cache_key = f"{crop_hash}:{args.gemini_model}:{prompt_version}"
 
@@ -168,9 +191,9 @@ def main() -> None:
         if gemini_batch:
             batch_size = max(1, int(args.gemini_batch_size))
             for start in range(0, len(gemini_batch), batch_size):
-                batch = gemini_batch[start : start + batch_size]
+                batch = gemini_batch[start: start + batch_size]
 
-                def _make_call():
+                def _make_call(_hints: str = character_hints):
                     def _call(api_key: str):
                         return demo._gemini_generate_scene_json_batch(
                             api_key=api_key,
@@ -180,8 +203,8 @@ def main() -> None:
                             temperature=0.2,
                             thinking_budget=max(0, int(args.gemini_thinking_budget)),
                             timeout_s=max(5, int(args.gemini_timeout)),
+                            character_hints=_hints,   # ← injected here
                         )
-
                     return _call
 
                 try:
@@ -190,7 +213,7 @@ def main() -> None:
                     if scene_provider == "gemini":
                         _fail(f"Gemini request failed: {_safe_gemini_error(e)}")
                     err_s = _safe_gemini_error(e)
-                    print(f"[Gemini] Warning: failed to generate scene labels ({err_s}); will fall back to Ollama.")
+                    print(f"[Gemini] Warning: failed ({err_s}); will fall back to Ollama.")
                     for panel_idx, _ in batch:
                         p = panels[panel_idx]
                         if isinstance(p, dict):
@@ -218,13 +241,16 @@ def main() -> None:
                         p["scene_tags"] = [str(x).strip().lower() for x in tags if str(x).strip()]
                         ck = gemini_batch_keys.get(panel_idx)
                         if args.cache and ck:
-                            gemini_cache[ck] = {"caption": p["scene_caption"], "tags": p.get("scene_tags") or []}
+                            gemini_cache[ck] = {
+                                "caption": p["scene_caption"],
+                                "tags": p.get("scene_tags") or [],
+                            }
                     else:
                         if scene_provider == "auto":
                             p["scene_caption"] = "ERROR: Gemini returned no item for this panel"
                             p["scene_tags"] = []
 
-    # Ollama pass (optional): fill missing captions (AUTO fallback) or always (OLLAMA-only)
+    # ── Ollama pass ───────────────────────────────────────────────────────────
     if scene_provider in {"ollama", "auto"}:
         indices: list[int] = []
         for i, p in enumerate(panels):
@@ -238,8 +264,8 @@ def main() -> None:
             crop_rel = p.get("crop_path")
             if not isinstance(crop_rel, str) or not crop_rel.strip():
                 continue
-            crop_path = out_root / crop_rel
-            if not crop_path.exists():
+            crop_path_full = out_root / crop_rel
+            if not crop_path_full.exists():
                 continue
             indices.append(i)
 
@@ -247,35 +273,40 @@ def main() -> None:
             print(f"[Ollama] host={args.ollama_host} model={args.ollama_model}")
             print(f"[Ollama] panels to process: {len(indices)} / {len(panels)}")
             if indices:
-                print("[Ollama] Tip: first panel may take a while while the model loads in Ollama.")
+                print("[Ollama] Tip: first panel may take a while while the model loads.")
             sys.stdout.flush()
 
         processed = 0
         start_all = time.time()
         total = len(indices)
+
         for i in indices:
             p = panels[i]
             if not isinstance(p, dict):
                 continue
-
             crop_rel = p.get("crop_path")
             if not isinstance(crop_rel, str) or not crop_rel.strip():
                 continue
-            crop_path = out_root / crop_rel
-            crop = Image.open(crop_path).convert("RGB")
+            crop_path_full = out_root / crop_rel
+            crop = Image.open(crop_path_full).convert("RGB")
 
             processed += 1
-            if args.progress and (processed == 1 or processed % max(1, int(args.log_every)) == 0 or processed == total):
+            if args.progress and (
+                processed == 1
+                or processed % max(1, int(args.log_every)) == 0
+                or processed == total
+            ):
                 pid = p.get("panel_id") if isinstance(p.get("panel_id"), str) else ""
-                print(f"[Ollama] ({processed}/{total}) caption panel_id={pid} crop={crop_rel}")
+                print(f"[Ollama] ({processed}/{total}) panel_id={pid} crop={crop_rel}")
                 sys.stdout.flush()
 
             t0 = time.time()
             try:
+                # Caption prompt now includes character hints — no hardcoding
                 caption = demo._ollama_generate_text(
                     host=args.ollama_host,
                     model=args.ollama_model,
-                    prompt=demo._ollama_caption_prompt(),
+                    prompt=caption_prompt,
                     image=crop,
                     max_tokens=int(args.ollama_caption_tokens),
                     temperature=0.2,
@@ -285,9 +316,13 @@ def main() -> None:
                 caption = f"ERROR: {e}"
             p["scene_caption"] = (caption or "").strip()
 
-            if args.progress and (processed == 1 or processed % max(1, int(args.log_every)) == 0 or processed == total):
+            if args.progress and (
+                processed == 1
+                or processed % max(1, int(args.log_every)) == 0
+                or processed == total
+            ):
                 dt = time.time() - t0
-                print(f"[Ollama] ({processed}/{total}) caption done in {dt:.1f}s")
+                print(f"[Ollama] ({processed}/{total}) done in {dt:.1f}s → {p['scene_caption'][:80]}")
                 sys.stdout.flush()
 
             try:
@@ -308,16 +343,20 @@ def main() -> None:
 
         if args.progress and total:
             dt_all = time.time() - start_all
-            print(f"[Ollama] done: {processed}/{total} panels in {dt_all/60.0:.1f} min")
+            print(f"[Ollama] done: {processed}/{total} panels in {dt_all / 60.0:.1f} min")
             sys.stdout.flush()
 
+    # ── Save Gemini cache ─────────────────────────────────────────────────────
     if args.cache and gemini_rotator is not None:
         try:
-            cache_path.write_text(json.dumps(demo._to_jsonable(gemini_cache), ensure_ascii=False, indent=2), encoding="utf-8")
+            cache_path.write_text(
+                json.dumps(demo._to_jsonable(gemini_cache), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
         except Exception:
             pass
 
-    # Optional per-panel sidecars (next to each cropped panel image)
+    # ── Write per-panel sidecars ──────────────────────────────────────────────
     now_utc = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     for p in panels:
         if not isinstance(p, dict):
@@ -325,8 +364,8 @@ def main() -> None:
         crop_rel = p.get("crop_path")
         if not isinstance(crop_rel, str) or not crop_rel.strip():
             continue
-        crop_path = out_root / crop_rel
-        panel_dir = crop_path.parent
+        crop_path_full = out_root / crop_rel
+        panel_dir = crop_path_full.parent
         if not panel_dir.exists():
             continue
         caption = (p.get("scene_caption") or "").strip() if isinstance(p.get("scene_caption"), str) else ""
@@ -334,16 +373,25 @@ def main() -> None:
         try:
             (panel_dir / "scene.json").write_text(
                 json.dumps(
-                    {"scene_caption": caption, "scene_tags": tags, "provider": scene_provider, "updated_at": now_utc},
+                    {
+                        "scene_caption": caption,
+                        "scene_tags": tags,
+                        "provider": scene_provider,
+                        "updated_at": now_utc,
+                    },
                     ensure_ascii=False,
                     indent=2,
                 ),
                 encoding="utf-8",
             )
-            (panel_dir / "scene.txt").write_text(caption + ("\n" if caption else ""), encoding="utf-8")
+            (panel_dir / "scene.txt").write_text(
+                caption + ("\n" if caption else ""),
+                encoding="utf-8",
+            )
         except Exception:
             pass
 
+    # ── Write output storyboard ───────────────────────────────────────────────
     out_path = Path(args.out) if args.out else storyboard_path
     out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Wrote: {out_path}")

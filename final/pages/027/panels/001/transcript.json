@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 2,
+    "speaker": "unsure",
+    "text": "HAAAH",
+    "bbox": [
+      466.20001220703125,
+      2149.5,
+      567.7200317382812,
+      2203.5
+    ],
+    "essential": false
+  },
+  {
+    "text_idx": 3,
+    "speaker": "unsure",
+    "text": "HAA4H",
+    "bbox": [
+      349.5600280761719,
+      2446.5,
+      448.9200134277344,
+      2497.5
+    ],
+    "essential": true
+  }
+]

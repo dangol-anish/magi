@@ -147,10 +147,17 @@ def main() -> None:
         local_files_only=not bool(args.allow_downloads),
     )
 
-    images_np = [demo._read_image_rgb_np(p) for p in image_paths]
+    # Process one page at a time to keep peak memory low (important on MPS).
+    det_assoc = []
+    ocr = []
     with demo.torch.no_grad():
-        det_assoc = model.predict_detections_and_associations(images_np, processor)
-        ocr = model.predict_ocr(images_np, processor)
+        for i, p in enumerate(image_paths):
+            print(f"[Magi] Processing page {i+1}/{len(image_paths)}: {p}")
+            img_np = demo._read_image_rgb_np(p)
+            det = model.predict_detections_and_associations([img_np], processor)
+            oc = model.predict_ocr([img_np], processor)
+            det_assoc.append(det[0] if isinstance(det, list) and det else det)
+            ocr.append(oc[0] if isinstance(oc, list) and oc else oc)
 
     # Optional debug: annotated overlays + per-page raw JSON
     if args.debug:

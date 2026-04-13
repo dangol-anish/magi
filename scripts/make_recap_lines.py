@@ -859,6 +859,7 @@ def main() -> None:
                 if isinstance(x, dict) and isinstance(x.get("text"), str)
             ]
             prev_lines = [" ".join(x.split()) for x in prev_lines if x and x.strip()]
+            previous_chunk_recap = " ".join(prev_lines[-2:]).strip() if prev_lines else "(none)"
 
             # OCR cleanup before extracting story evidence.
             # Keep this conservative: strip SFX/noise, and normalize known OCR name collisions.
@@ -894,6 +895,68 @@ def main() -> None:
 
             # Feed the model cleaned OCR lines as primary evidence; let it extract the actual story facts.
             ocr_facts = _ocr_to_story_facts(ocr_story_lines if ocr_story_lines else ocr_all_clean)
+
+            # Groq-specific recap prompt: concise, concrete, dialogue-preserving.
+            def _build_raw_panel_block(panel_ids: list[str]) -> str:
+                blocks: list[str] = []
+                for pid in panel_ids:
+                    panel = panel_by_id.get(pid)
+                    if not isinstance(panel, dict):
+                        continue
+                    scene_caption = str(panel.get("scene_caption") or "").strip()
+                    scene_tags = panel.get("scene_tags") if isinstance(panel.get("scene_tags"), list) else []
+                    scene_tags = [str(x).strip() for x in scene_tags if str(x).strip()]
+                    ocr_lines = panel.get("ocr_lines") if isinstance(panel.get("ocr_lines"), list) else []
+
+                    lines: list[str] = []
+                    for ol in ocr_lines:
+                        if not isinstance(ol, dict):
+                            continue
+                        text = str(ol.get("text") or "").strip()
+                        if not text:
+                            continue
+                        speaker = str(ol.get("speaker") or "").strip()
+                        lines.append(f"<{speaker}>: {text}" if speaker else text)
+
+                    blocks.append(
+                        "\n".join(
+                            [
+                                f"panel_id: {pid}",
+                                f"scene_caption: {scene_caption or '(none)'}",
+                                f"scene_tags: {', '.join(scene_tags) if scene_tags else '(none)'}",
+                                "dialogue:",
+                                *([f"- {x}" for x in lines] if lines else ["- (none)"]),
+                            ]
+                        )
+                    )
+                return "\n\n".join(blocks) if blocks else "(no panels)"
+
+            raw_panel_block = _build_raw_panel_block(beat_panel_ids)
+
+            groq_system_prompt = (
+                "You are a sharp, concise manga recap writer. Your job is to retell \n"
+                "what literally happens in a set of manga panels as clean, engaging \n"
+                "prose — like a skilled narrator summarizing a story for a reader.\n\n"
+                "Strict rules:\n"
+                "- Never use meta-commentary like \"the story unfolds\", \"the scene shifts\", \n"
+                "  \"connections are becoming clearer\", or \"building to a climax\"\n"
+                "- Never speculate about what things \"might mean\" or \"possibly suggest\"\n"
+                "- Never pad with filler — if you have nothing new to say, stop writing\n"
+                "- Write ONLY what concretely happens: who does what, who says what, \n"
+                "  what changes\n"
+                "- Use past tense, third person\n"
+                "- Keep it tight — 3 to 5 sentences per chunk maximum\n"
+                "- Preserve character names, specific dialogue, and emotional tone exactly\n"
+                "- Output only the recap text, no labels, no preamble, nothing else"
+            )
+
+            groq_user_prompt = (
+                "Previous section (for continuity — do NOT repeat or summarize this, \n"
+                "just continue from it):\n"
+                f"{previous_chunk_recap}\n\n"
+                "Write a recap of these panels:\n"
+                f"{raw_panel_block}"
+            )
 
             prompt = (
                 "You are a manga recap narrator. Write like a YouTube storyteller — direct, energetic, and easy to follow. "
@@ -1020,15 +1083,14 @@ def main() -> None:
                     _fail(f"Missing Groq API key env var {args.groq_key_env!r}. Put it in .env or export it.")
                 url = f"{args.groq_base_url.rstrip('/')}/chat/completions"
                 payload = {
-    "model": args.groq_model,
-    "messages": [
-        {"role": "system", "content": prompt},  # move full prompt here
-        {"role": "user", "content": 
-            f"Write the recap paragraph for beat {beat_id} using the evidence provided above."},
-    ],
-    "temperature": 0.7,  # also raise from 0.3 — too low makes output robotic
-    "max_tokens": 600,
-}
+                    "model": args.groq_model,
+                    "messages": [
+                        {"role": "system", "content": groq_system_prompt},
+                        {"role": "user", "content": groq_user_prompt},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 600,
+                }
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 r = requests.post(url, headers=headers, json=payload, timeout=max(5, int(args.groq_timeout)))
                 r.raise_for_status()

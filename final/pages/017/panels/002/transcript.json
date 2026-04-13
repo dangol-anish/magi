@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 1,
+    "speaker": "char_0",
+    "text": "My tongue is melting!",
+    "bbox": [
+      250.20001220703125,
+      2113.5,
+      421.5600280761719,
+      2194.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 2,
+    "speaker": "char_0",
+    "text": "It's hot.",
+    "bbox": [
+      525.9600219726562,
+      2839.5,
+      646.2000122070312,
+      2887.5
+    ],
+    "essential": true
+  }
+]

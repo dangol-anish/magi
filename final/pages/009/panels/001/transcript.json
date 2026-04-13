@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 2,
+    "speaker": "char_0",
+    "text": "What's your name?",
+    "bbox": [
+      436.6800231933594,
+      1939.5,
+      616.6800537109375,
+      2017.5
+    ],
+    "essential": true
+  }
+]

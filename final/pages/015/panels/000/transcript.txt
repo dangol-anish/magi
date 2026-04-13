@@ -1,0 +1,3 @@
+<char_0>: It's hot chocolate.
+<char_0>: It may be a little hot, so be careful.
+<unsure>: Now, please be comfortable.

@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 3,
+    "speaker": "char_0",
+    "text": "raise your head.",
+    "bbox": [
+      398.52001953125,
+      1021.5,
+      636.1199951171875,
+      1096.5
+    ],
+    "essential": false
+  },
+  {
+    "text_idx": 4,
+    "speaker": "unsure",
+    "text": "Get up.",
+    "bbox": [
+      236.52000427246094,
+      1270.5,
+      477.72003173828125,
+      1378.5
+    ],
+    "essential": true
+  }
+]

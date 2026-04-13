@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 3,
+    "speaker": "unsure",
+    "text": "If it's easier support, it's that, right?",
+    "bbox": [
+      447.4800109863281,
+      1819.5,
+      680.760009765625,
+      1972.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 4,
+    "speaker": "unsure",
+    "text": "Oh, the puppet show of aristocrats... is that right?",
+    "bbox": [
+      64.44000244140625,
+      1972.5,
+      137.16000366210938,
+      2047.5
+    ],
+    "essential": false
+  }
+]

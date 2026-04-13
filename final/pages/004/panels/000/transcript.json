@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 0,
+    "speaker": "char_0",
+    "text": "But murders the enemy relentlessly...",
+    "bbox": [
+      396.3600158691406,
+      592.5,
+      621.0,
+      706.5
+    ],
+    "essential": true
+  }
+]

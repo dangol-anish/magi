@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 2,
+    "speaker": "unsure",
+    "text": "but this aristocratic...?",
+    "bbox": [
+      432.3600158691406,
+      1936.5,
+      628.9200439453125,
+      2011.5
+    ],
+    "essential": true
+  }
+]

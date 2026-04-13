@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 1,
+    "speaker": "unsure",
+    "text": "Come down.",
+    "bbox": [
+      294.84002685546875,
+      2374.5,
+      480.6000061035156,
+      2422.5
+    ],
+    "essential": true
+  }
+]

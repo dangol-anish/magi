@@ -28,27 +28,24 @@ _ensure_hf_cache_writable()
 def _maybe_load_dotenv() -> None:
     """
     Best-effort loader for a project-root `.env` file.
-
-    - Does not override already-set environment variables.
-    - Supports lines like `KEY=value` and `export KEY=value`.
-    - Ignores blank lines and `#` comments.
+    Does not override already-set environment variables.
+    Supports lines like `KEY=value` and `export KEY=value`.
+    Ignores blank lines and `#` comments.
     """
     project_root = Path(__file__).resolve().parents[1]
     dotenv_path = project_root / ".env"
     if not dotenv_path.exists():
         return
-
     try:
         content = dotenv_path.read_text(encoding="utf-8")
     except Exception:
         return
-
     for raw_line in content.splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
         if line.startswith("export "):
-            line = line[len("export ") :].lstrip()
+            line = line[len("export "):].lstrip()
         if "=" not in line:
             continue
         key, value = line.split("=", 1)
@@ -91,7 +88,6 @@ def _collect_image_paths(raw_inputs: list[str]) -> list[str]:
     supported_suffixes = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff"}
     missing: list[str] = []
     resolved: list[str] = []
-
     for raw in raw_inputs:
         p = Path(raw).expanduser()
         if p.is_dir():
@@ -99,13 +95,10 @@ def _collect_image_paths(raw_inputs: list[str]) -> list[str]:
                 if child.is_file() and child.suffix.lower() in supported_suffixes:
                     resolved.append(str(child))
             continue
-
         if p.is_file():
             resolved.append(str(p))
             continue
-
         missing.append(str(p))
-
     if missing:
         hint = (
             "Pass real image paths, e.g.\n"
@@ -114,10 +107,8 @@ def _collect_image_paths(raw_inputs: list[str]) -> list[str]:
             "  python examples/magiv3_demo.py --images ~/Downloads/chapter_pages/\n"
         )
         raise SystemExit(f"Image path(s) not found:\n- " + "\n- ".join(missing) + "\n\n" + hint)
-
     if not resolved:
         raise SystemExit("No images found. Provide image files or a folder containing images.")
-
     return resolved
 
 
@@ -136,7 +127,6 @@ def _to_jsonable(value):
 def _maybe_extract_polygon(bbox):
     if bbox is None:
         return None, None
-
     if isinstance(bbox, dict):
         for key in ("polygon", "poly", "points", "segmentation"):
             if key in bbox:
@@ -145,34 +135,33 @@ def _maybe_extract_polygon(bbox):
             if key in bbox:
                 return _maybe_extract_polygon(bbox[key])
         return None, None
-
-    if isinstance(bbox, (list, tuple)) and len(bbox) == 4 and all(isinstance(x, (int, float, np.integer, np.floating)) for x in bbox):
+    if isinstance(bbox, (list, tuple)) and len(bbox) == 4 and all(
+        isinstance(x, (int, float, np.integer, np.floating)) for x in bbox
+    ):
         x1, y1, x2, y2 = [float(x) for x in bbox]
         return None, (x1, y1, x2, y2)
-
     if isinstance(bbox, (list, tuple)) and len(bbox) >= 3 and all(
-        isinstance(p, (list, tuple)) and len(p) == 2 and all(isinstance(x, (int, float, np.integer, np.floating)) for x in p)
+        isinstance(p, (list, tuple)) and len(p) == 2 and all(
+            isinstance(x, (int, float, np.integer, np.floating)) for x in p
+        )
         for p in bbox
     ):
         pts = [(float(x), float(y)) for x, y in bbox]
         xs = [p[0] for p in pts]
         ys = [p[1] for p in pts]
         return pts, (min(xs), min(ys), max(xs), max(ys))
-
     return None, None
 
 
 def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
     img = Image.open(image_path).convert("RGB")
     draw = ImageDraw.Draw(img, "RGBA")
-
     for panel in result.get("panels", []) or []:
         poly, rect = _maybe_extract_polygon(panel)
         if poly:
             draw.polygon(poly, outline=(255, 215, 0, 255))
         elif rect:
             draw.rectangle(rect, outline=(255, 215, 0, 255), width=3)
-
     essential = result.get("is_essential_text", []) or []
     texts = result.get("texts", []) or []
     for idx, tb in enumerate(texts):
@@ -189,14 +178,12 @@ def _draw_overlay(image_path: str, result: dict, out_path: str) -> None:
                 draw.rectangle(rect, fill=fill, outline=(255, 0, 0, 255), width=3)
             else:
                 draw.rectangle(rect, outline=(255, 0, 0, 255), width=3)
-
     for cb in result.get("characters", []) or []:
         poly, rect = _maybe_extract_polygon(cb)
         if poly:
             draw.polygon(poly, outline=(0, 120, 255, 255))
         elif rect:
             draw.rectangle(rect, outline=(0, 120, 255, 255), width=3)
-
     img.save(out_path)
 
 
@@ -234,7 +221,6 @@ def _build_transcript(result: dict, ocr_texts: list[str]) -> tuple[list[dict], s
     texts = result.get("texts", []) or []
     assoc = result.get("text_character_associations", []) or []
     char_labels = result.get("character_cluster_labels", []) or []
-
     text_to_char: dict[int, int] = {}
     if isinstance(assoc, list):
         for pair in assoc:
@@ -243,7 +229,6 @@ def _build_transcript(result: dict, ocr_texts: list[str]) -> tuple[list[dict], s
                     text_to_char[int(pair[0])] = int(pair[1])
                 except Exception:
                     continue
-
     items: list[dict] = []
     lines: list[str] = []
     n = max(len(texts), len(ocr_texts), len(essential))
@@ -251,7 +236,6 @@ def _build_transcript(result: dict, ocr_texts: list[str]) -> tuple[list[dict], s
         is_ess = bool(essential[text_idx]) if text_idx < len(essential) else True
         if not is_ess:
             continue
-
         raw_text = ocr_texts[text_idx] if text_idx < len(ocr_texts) else ""
         char_idx = text_to_char.get(text_idx)
         speaker = "unsure"
@@ -260,19 +244,15 @@ def _build_transcript(result: dict, ocr_texts: list[str]) -> tuple[list[dict], s
                 speaker = f"char_{char_labels[char_idx]}"
             else:
                 speaker = f"char_{char_idx}"
-
         bbox = texts[text_idx] if text_idx < len(texts) else None
-        items.append(
-            {
-                "text_idx": text_idx,
-                "speaker": speaker,
-                "text": raw_text,
-                "bbox": bbox,
-                "essential": True,
-            }
-        )
+        items.append({
+            "text_idx": text_idx,
+            "speaker": speaker,
+            "text": raw_text,
+            "bbox": bbox,
+            "essential": True,
+        })
         lines.append(f"<{speaker}>: {raw_text}")
-
     return items, "\n".join(lines) + ("\n" if lines else "")
 
 
@@ -320,10 +300,8 @@ def _build_bad_words_ids(processor):
     global _BAD_WORDS_IDS
     if _BAD_WORDS_IDS is not None:
         return _BAD_WORDS_IDS
-
     tokenizer = processor.tokenizer
     bad_token_ids: list[list[int]] = []
-
     for tok in [
         "<panel>", "<text>", "<character>", "<tail>", "<od>", "</od>",
         "<ocr>", "</ocr>", "<cap>", "</cap>", "<ncap>", "</ncap>",
@@ -335,13 +313,11 @@ def _build_bad_words_ids(processor):
         tid = tokenizer.convert_tokens_to_ids(tok)
         if isinstance(tid, int) and tid != tokenizer.unk_token_id:
             bad_token_ids.append([tid])
-
     for i in range(1000):
         tok = f"<loc_{i}>"
         tid = tokenizer.convert_tokens_to_ids(tok)
         if isinstance(tid, int) and tid != tokenizer.unk_token_id:
             bad_token_ids.append([tid])
-
     _BAD_WORDS_IDS = bad_token_ids
     return _BAD_WORDS_IDS
 
@@ -385,46 +361,73 @@ def _crop_rect(image: Image.Image, rect, pad_ratio: float = 0.03) -> Image.Image
     return image.crop((x1, y1, x2, y2))
 
 
-def _ollama_generate_text(
-    *,
-    host: str,
-    model: str,
-    prompt: str,
-    image: Image.Image | None = None,
-    max_tokens: int = 128,
-    temperature: float = 0.2,
-    timeout_s: int = 120,
-):
-    images = None
-    if image is not None:
-        import io
-        bio = io.BytesIO()
-        image.save(bio, format="PNG")
-        img_b64 = base64.b64encode(bio.getvalue()).decode("ascii")
-        images = [img_b64]
+# ── Character hints (manga-agnostic) ─────────────────────────────────────────
 
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        **({"images": images} if images is not None else {}),
-        "stream": False,
-        "options": {
-            "temperature": temperature,
-            "num_predict": int(max_tokens),
-        },
-    }
-    # Separate connect + read timeouts; big VLMs can take a while on first load.
-    r = requests.post(f"{host.rstrip('/')}/api/generate", json=payload, timeout=(10, timeout_s))
-    r.raise_for_status()
-    data = r.json()
-    return (data.get("response") or "").strip()
+def _build_character_hints(panels: list[dict], chapter_context: str = "") -> str:
+    """
+    Build a generic character hint string from cluster data already present
+    in the storyboard. Works for any manga — no hardcoded names or series.
+
+    If chapter_context is provided (user-supplied free text), it is appended
+    after the auto-detected cluster summary.
+    """
+    clusters: dict[int, int] = {}  # cluster_id -> panel count
+
+    for p in panels:
+        if not isinstance(p, dict):
+            continue
+        labels = p.get("character_cluster_labels") or []
+        for label in labels:
+            try:
+                cid = int(label)
+            except Exception:
+                continue
+            clusters[cid] = clusters.get(cid, 0) + 1
+
+    lines: list[str] = []
+
+    if clusters:
+        lines.append(f"This chapter contains {len(clusters)} recurring character(s):")
+        for cid in sorted(clusters.keys()):
+            lines.append(
+                f"  - Character {cid}: appears across {clusters[cid]} panel(s). "
+                f"Refer to them consistently as 'Character {cid}' if their name is unknown."
+            )
+        lines.append(
+            "Do not invent names. Do not assume gender from hair colour or build alone — "
+            "only state gender if it is clearly visible in the panel."
+        )
+
+    if chapter_context.strip():
+        if lines:
+            lines.append("")
+        lines.append("Additional context provided by the user:")
+        lines.append(chapter_context.strip())
+
+    return "\n".join(lines)
 
 
-def _ollama_caption_prompt() -> str:
-    return (
-        "Describe the visual scene in this manga panel in ONE short sentence.\n"
-        "Ignore any written dialogue text in speech bubbles.\n"
-    )
+# ── Vision prompts ────────────────────────────────────────────────────────────
+
+def _ollama_caption_prompt(character_hints: str = "") -> str:
+    """
+    Generic manga panel caption prompt. Accepts optional character hints
+    built from cluster data or user-supplied context.
+    Works for any manga series.
+    """
+    parts = [
+        "You are analyzing a single manga panel.",
+        "Describe what is visually happening in ONE short, clear sentence.",
+        "Focus on: character actions, body language, expressions, and scene setting.",
+        "Ignore speech bubble text — describe only what you see visually.",
+        "Do not assume character names unless they are told to you below.",
+        "Do not assume gender unless it is clearly visible in the art.",
+        "Do not invent details that are not visible in the panel.",
+    ]
+    if character_hints.strip():
+        parts.append("")
+        parts.append(character_hints.strip())
+    return "\n".join(parts) + "\n"
 
 
 def _ollama_tags_prompt(caption: str) -> str:
@@ -434,6 +437,27 @@ def _ollama_tags_prompt(caption: str) -> str:
         "TAGS: tag1, tag2, tag3\n"
         f"Caption: {caption}\n"
     )
+
+
+def _gemini_scene_prompt(character_hints: str = "") -> str:
+    """
+    Generic Gemini batch scene prompt. Accepts optional character hints.
+    Works for any manga series.
+    """
+    parts = [
+        "You are labeling panels from a manga.",
+        "For each panel: describe what is visually happening in one short sentence.",
+        "Ignore written dialogue text in speech bubbles — focus only on the visuals.",
+        "Do not assume character names unless told below.",
+        "Do not assume gender unless clearly visible in the art.",
+        "Return ONLY a JSON array, one entry per panel:",
+        '[{"panel_idx":0,"tags":["action","indoor"],"caption":"A figure raises their hand in anger."}]',
+        "tags: 2-6 short lowercase descriptive labels.",
+    ]
+    if character_hints.strip():
+        parts.append("")
+        parts.append(character_hints.strip())
+    return "\n".join(parts) + "\n"
 
 
 def _parse_scene_labels(text: str) -> tuple[list[str], str]:
@@ -455,6 +479,55 @@ def _parse_scene_labels(text: str) -> tuple[list[str], str]:
         caption = " ".join([ln.strip() for ln in text.splitlines() if ln.strip()])[:400]
     return tags[:6], caption
 
+
+# ── Ollama generate ───────────────────────────────────────────────────────────
+
+def _ollama_generate_text(
+    *,
+    host: str,
+    model: str,
+    prompt: str,
+    image: Image.Image | list[Image.Image] | None = None,
+    max_tokens: int = 256,
+    temperature: float = 0.2,
+    timeout_s: int = 120,
+):
+    images = None
+    if image is not None:
+        import io
+        imgs: list[Image.Image]
+        if isinstance(image, list):
+            imgs = [im for im in image if isinstance(im, Image.Image)]
+        else:
+            imgs = [image]
+        encoded: list[str] = []
+        for im in imgs:
+            bio = io.BytesIO()
+            im.save(bio, format="PNG")
+            encoded.append(base64.b64encode(bio.getvalue()).decode("ascii"))
+        images = encoded if encoded else None
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        **({"images": images} if images is not None else {}),
+        "stream": False,
+        "options": {
+            "temperature": temperature,
+            "num_predict": int(max_tokens),
+        },
+    }
+    r = requests.post(
+        f"{host.rstrip('/')}/api/generate",
+        json=payload,
+        timeout=(10, timeout_s),
+    )
+    r.raise_for_status()
+    data = r.json()
+    return (data.get("response") or "").strip()
+
+
+# ── JSON helpers ──────────────────────────────────────────────────────────────
 
 def _strip_json_fence(text: str) -> str:
     t = (text or "").strip()
@@ -483,17 +556,17 @@ def _extract_first_json_object(text: str) -> str | None:
                 esc = False
             elif ch == "\\":
                 esc = True
-            elif ch == "\"":
+            elif ch == '"':
                 in_str = False
             continue
-        if ch == "\"":
+        if ch == '"':
             in_str = True
         elif ch == "{":
             depth += 1
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return t[start : i + 1]
+                return t[start: i + 1]
     return None
 
 
@@ -512,17 +585,17 @@ def _extract_first_json_array(text: str) -> str | None:
                 esc = False
             elif ch == "\\":
                 esc = True
-            elif ch == "\"":
+            elif ch == '"':
                 in_str = False
             continue
-        if ch == "\"":
+        if ch == '"':
             in_str = True
         elif ch == "[":
             depth += 1
         elif ch == "]":
             depth -= 1
             if depth == 0:
-                return t[start : i + 1]
+                return t[start: i + 1]
     return None
 
 
@@ -533,134 +606,7 @@ def _sha256_png(image: Image.Image) -> str:
     return hashlib.sha256(bio.getvalue()).hexdigest()
 
 
-def _gemini_scene_prompt() -> str:
-    return (
-        "Label manga panels. Ignore written dialogue; focus on visuals.\n"
-        "Return ONLY JSON array:\n"
-        "[{\"panel_idx\":0,\"tags\":[\"tag\"],\"caption\":\"one short sentence\"}]\n"
-        "tags: 2-6 short lowercase labels."
-    )
-
-
-# ---------------------------------------------------------------------------
-# Gemini key rotation
-# ---------------------------------------------------------------------------
-
-class GeminiKeyRotator:
-    """
-    Holds a list of API keys and rotates to the next one whenever the current
-    key hits a quota / auth error (HTTP 429, 401, 403).  On a non-quota error
-    (network failure, 500 …) it retries the *same* key up to `max_retries`
-    times with exponential back-off before giving up.
-    """
-
-    # Status codes that mean "this key is exhausted / invalid – try the next one"
-    ROTATE_ON = {429, 401, 403}
-    # Status codes worth retrying on the same key
-    RETRY_ON  = {500, 502, 503, 504}
-
-    def __init__(
-        self,
-        keys: list[str],
-        max_retries: int = 2,
-        base_sleep_s: float = 2.0,
-        *,
-        log_key_fingerprint: bool = False,
-    ):
-        if not keys:
-            raise ValueError("GeminiKeyRotator requires at least one API key.")
-        self.keys = keys
-        self.max_retries = max_retries
-        self.base_sleep_s = base_sleep_s
-        self.log_key_fingerprint = bool(log_key_fingerprint)
-        self._idx = 0          # index of the currently active key
-        self._exhausted: set[int] = set()
-
-    @property
-    def current_key(self) -> str:
-        return self.keys[self._idx]
-
-    def current_key_fingerprint(self) -> str:
-        # Never print the raw key. Fingerprint is enough for debugging rotation.
-        return hashlib.sha256(self.current_key.encode("utf-8")).hexdigest()[:10]
-
-    def _rotate(self) -> bool:
-        """Try to advance to the next non-exhausted key.  Returns False if none left."""
-        self._exhausted.add(self._idx)
-        for offset in range(1, len(self.keys)):
-            candidate = (self._idx + offset) % len(self.keys)
-            if candidate not in self._exhausted:
-                print(f"[GeminiKeyRotator] Rotating from key index {self._idx} → {candidate}")
-                self._idx = candidate
-                return True
-        return False
-
-    def call(self, fn):
-        """
-        Call `fn(api_key: str)` using the current key.
-        - On quota/auth error  → rotate key and retry immediately (up to len(keys) times).
-        - On transient error   → back-off and retry same key (up to max_retries times).
-        - Raises on total exhaustion or non-retryable errors.
-        """
-        retries_on_current = 0
-        keys_tried = 0
-
-        while True:
-            try:
-                if self.log_key_fingerprint:
-                    print(
-                        f"[GeminiKeyRotator] Using key index {self._idx} "
-                        f"(fingerprint={self.current_key_fingerprint()})"
-                    )
-                return fn(self.current_key)
-
-            except requests.HTTPError as e:
-                status = getattr(e.response, "status_code", None)
-                if self.log_key_fingerprint:
-                    # Helpful debugging for quota/rate-limit without ever printing secrets.
-                    try:
-                        body = (e.response.text or "").strip() if getattr(e, "response", None) is not None else ""
-                    except Exception:
-                        body = ""
-                    if body:
-                        msg = ""
-                        try:
-                            data = json.loads(body)
-                            err = data.get("error") if isinstance(data, dict) else None
-                            if isinstance(err, dict):
-                                m = err.get("message")
-                                s = err.get("status")
-                                msg = f"{s}: {m}" if s and m else (m or s or "")
-                        except Exception:
-                            msg = ""
-                        if msg:
-                            print(f"[GeminiKeyRotator] HTTP {status} response: {msg}")
-                        else:
-                            snip = body.replace("\n", " ")
-                            if len(snip) > 240:
-                                snip = snip[:240] + "…"
-                            print(f"[GeminiKeyRotator] HTTP {status} response body: {snip}")
-
-                if status in self.ROTATE_ON:
-                    print(f"[GeminiKeyRotator] Key index {self._idx} returned HTTP {status} – rotating.")
-                    keys_tried += 1
-                    if keys_tried >= len(self.keys) or not self._rotate():
-                        raise RuntimeError(
-                            f"All {len(self.keys)} Gemini API key(s) are exhausted or invalid."
-                        ) from e
-                    retries_on_current = 0   # fresh counter for the new key
-                    continue
-
-                if status in self.RETRY_ON and retries_on_current < self.max_retries:
-                    sleep_s = self.base_sleep_s * (2 ** retries_on_current)
-                    print(f"[GeminiKeyRotator] HTTP {status} on key index {self._idx} – "
-                          f"retrying in {sleep_s:.1f}s (attempt {retries_on_current + 1}/{self.max_retries})")
-                    time.sleep(sleep_s)
-                    retries_on_current += 1
-                    continue
-
-                raise  # non-retryable or retries exhausted
-
+# ── Gemini batch scene generation ─────────────────────────────────────────────
 
 def _gemini_generate_scene_json_batch(
     *,
@@ -671,10 +617,11 @@ def _gemini_generate_scene_json_batch(
     temperature: float,
     thinking_budget: int,
     timeout_s: int,
+    character_hints: str = "",       # ← new: passed through from caller
 ) -> tuple[list[dict], dict]:
     import io
 
-    parts = [{"text": _gemini_scene_prompt()}]
+    parts = [{"text": _gemini_scene_prompt(character_hints=character_hints)}]
     for panel_idx, im in panel_images:
         parts.append({"text": f"PANEL {panel_idx}:"})
         bio = io.BytesIO()
@@ -740,20 +687,112 @@ def _gemini_generate_scene_json_batch(
         finish_reason = None
 
     usage = raw.get("usageMetadata") if isinstance(raw, dict) else None
-    return items, {"response_text": text, "finishReason": finish_reason, "usageMetadata": usage, "raw": raw}
+    return items, {
+        "response_text": text,
+        "finishReason": finish_reason,
+        "usageMetadata": usage,
+        "raw": raw,
+    }
+
+
+# ── Gemini key rotation ───────────────────────────────────────────────────────
+
+class GeminiKeyRotator:
+    ROTATE_ON = {429, 401, 403}
+    RETRY_ON = {500, 502, 503, 504}
+
+    def __init__(
+        self,
+        keys: list[str],
+        max_retries: int = 2,
+        base_sleep_s: float = 2.0,
+        *,
+        log_key_fingerprint: bool = False,
+    ):
+        if not keys:
+            raise ValueError("GeminiKeyRotator requires at least one API key.")
+        self.keys = keys
+        self.max_retries = max_retries
+        self.base_sleep_s = base_sleep_s
+        self.log_key_fingerprint = bool(log_key_fingerprint)
+        self._idx = 0
+        self._exhausted: set[int] = set()
+
+    @property
+    def current_key(self) -> str:
+        return self.keys[self._idx]
+
+    def current_key_fingerprint(self) -> str:
+        return hashlib.sha256(self.current_key.encode("utf-8")).hexdigest()[:10]
+
+    def _rotate(self) -> bool:
+        self._exhausted.add(self._idx)
+        for offset in range(1, len(self.keys)):
+            candidate = (self._idx + offset) % len(self.keys)
+            if candidate not in self._exhausted:
+                print(f"[GeminiKeyRotator] Rotating from key index {self._idx} → {candidate}")
+                self._idx = candidate
+                return True
+        return False
+
+    def call(self, fn):
+        retries_on_current = 0
+        keys_tried = 0
+        while True:
+            try:
+                if self.log_key_fingerprint:
+                    print(
+                        f"[GeminiKeyRotator] Using key index {self._idx} "
+                        f"(fingerprint={self.current_key_fingerprint()})"
+                    )
+                return fn(self.current_key)
+            except requests.HTTPError as e:
+                status = getattr(e.response, "status_code", None)
+                if self.log_key_fingerprint:
+                    try:
+                        body = (e.response.text or "").strip() if getattr(e, "response", None) is not None else ""
+                    except Exception:
+                        body = ""
+                    if body:
+                        msg = ""
+                        try:
+                            data = json.loads(body)
+                            err = data.get("error") if isinstance(data, dict) else None
+                            if isinstance(err, dict):
+                                m = err.get("message")
+                                s = err.get("status")
+                                msg = f"{s}: {m}" if s and m else (m or s or "")
+                        except Exception:
+                            msg = ""
+                        if msg:
+                            print(f"[GeminiKeyRotator] HTTP {status} response: {msg}")
+                        else:
+                            snip = body.replace("\n", " ")
+                            if len(snip) > 240:
+                                snip = snip[:240] + "…"
+                            print(f"[GeminiKeyRotator] HTTP {status} response body: {snip}")
+                if status in self.ROTATE_ON:
+                    print(f"[GeminiKeyRotator] Key index {self._idx} returned HTTP {status} – rotating.")
+                    keys_tried += 1
+                    if keys_tried >= len(self.keys) or not self._rotate():
+                        raise RuntimeError(
+                            f"All {len(self.keys)} Gemini API key(s) are exhausted or invalid."
+                        ) from e
+                    retries_on_current = 0
+                    continue
+                if status in self.RETRY_ON and retries_on_current < self.max_retries:
+                    sleep_s = self.base_sleep_s * (2 ** retries_on_current)
+                    print(
+                        f"[GeminiKeyRotator] HTTP {status} on key index {self._idx} – "
+                        f"retrying in {sleep_s:.1f}s (attempt {retries_on_current + 1}/{self.max_retries})"
+                    )
+                    time.sleep(sleep_s)
+                    retries_on_current += 1
+                    continue
+                raise
 
 
 def _load_gemini_keys(key_env_var: str) -> list[str]:
-    """
-    Collect all available Gemini API keys.
-
-    Looks for:
-      - The primary env var (e.g. GEMINI_API_KEY)
-      - Numbered variants:  GEMINI_API_KEY_2, GEMINI_API_KEY_3, GEMINI_API_KEY_4, GEMINI_API_KEY_5
-        (stops at the first missing one after key 1)
-
-    Returns a deduplicated list preserving order, empty strings excluded.
-    """
     keys: list[str] = []
     seen: set[str] = set()
 
@@ -765,16 +804,15 @@ def _load_gemini_keys(key_env_var: str) -> list[str]:
 
     primary = os.environ.get(key_env_var, "").strip()
     _add(primary)
-
-    # Look for _2 … _5 (extend the range if you ever add more keys)
     for n in range(2, 6):
         val = os.environ.get(f"{key_env_var}_{n}", "").strip()
         if not val:
-            break          # stop at first gap so GEMINI_API_KEY_4 without _3 isn't silently skipped
+            break
         _add(val)
-
     return keys
 
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Minimal Magi v3 demo runner (macOS-friendly).")
@@ -784,11 +822,7 @@ def main() -> None:
     parser.add_argument("--attn", default="eager", choices=["auto", "eager", "sdpa"])
     parser.add_argument("--out", default="out")
     parser.add_argument("--no-viz", action="store_true")
-    parser.add_argument(
-        "--skip-ocr",
-        action="store_true",
-        help="Skip Magi OCR (`predict_ocr`). Useful if OCR is already computed and you only need scene labels.",
-    )
+    parser.add_argument("--skip-ocr", action="store_true")
     parser.add_argument("--panel-captions", action="store_true")
     parser.add_argument("--panel-grounding", action="store_true")
     parser.add_argument("--max-panels", type=int, default=6)
@@ -796,46 +830,29 @@ def main() -> None:
     parser.add_argument("--caption-tokens", type=int, default=64)
     parser.add_argument("--prose-tokens", type=int, default=160)
     parser.add_argument("--prose", action="store_true")
-    parser.add_argument(
-        "--scene-labels",
-        dest="scene_labels",
-        action="store_true",
-        help="Generate per-panel scene labels (Gemini or Ollama depending on --scene-provider).",
-    )
-    # Back-compat alias (name is misleading; it gates Gemini too).
-    parser.add_argument(
-        "--ollama-scene-labels",
-        dest="scene_labels",
-        action="store_true",
-        help="(Deprecated alias) Same as --scene-labels.",
-    )
+    parser.add_argument("--scene-labels", dest="scene_labels", action="store_true")
+    parser.add_argument("--ollama-scene-labels", dest="scene_labels", action="store_true",
+                        help="(Deprecated alias) Same as --scene-labels.")
     parser.add_argument("--scene-provider", choices=["ollama", "gemini", "auto"], default="ollama")
     parser.add_argument("--ollama-host", default="http://127.0.0.1:11434")
     parser.add_argument("--ollama-model", default="llava-phi3:latest")
-    parser.add_argument("--scene-tokens", type=int, default=96)
-    parser.add_argument(
-        "--ollama-timeout",
-        type=int,
-        default=600,
-        help="Ollama read timeout in seconds for `/api/generate` (increase for large VLMs like qwen2.5vl:7b).",
-    )
+    parser.add_argument("--scene-tokens", type=int, default=256)   # raised from 96
+    parser.add_argument("--ollama-timeout", type=int, default=600)
     parser.add_argument("--gemini-model", default="gemini-2.5-flash")
-    parser.add_argument(
-        "--gemini-key-env",
-        default="GEMINI_API_KEY",
-        help=(
-            "Base name of the env var holding your primary Gemini API key. "
-            "Additional keys are loaded from <NAME>_2, <NAME>_3, … <NAME>_5 automatically."
-        ),
-    )
-    parser.add_argument(
-        "--gemini-log-key",
-        action="store_true",
-        help="Print the Gemini key index + a short SHA-256 fingerprint (never prints the raw key).",
-    )
+    parser.add_argument("--gemini-key-env", default="GEMINI_API_KEY")
+    parser.add_argument("--gemini-log-key", action="store_true")
     parser.add_argument("--gemini-timeout", type=int, default=120)
     parser.add_argument("--gemini-batch-size", type=int, default=6)
     parser.add_argument("--gemini-thinking-budget", type=int, default=0)
+    parser.add_argument(
+        "--chapter-context",
+        default="",
+        help=(
+            "Optional free-text context about this manga/chapter passed to the vision model. "
+            "Example: 'Shounen action manga. Protagonist has spiky black hair and wears an orange tracksuit.' "
+            "Leave empty for fully automatic mode. Works for any manga."
+        ),
+    )
     args = parser.parse_args()
 
     device = _pick_device(args.device)
@@ -847,7 +864,6 @@ def main() -> None:
     print(f"Loading model={args.model!r} on device={device!r} dtype={str(dtype).replace('torch.', '')}...")
 
     attn_implementation = None if args.attn == "auto" else args.attn
-
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
         torch_dtype=dtype,
@@ -868,22 +884,25 @@ def main() -> None:
             print(f"[{i+1}/{total}] Detecting panels & characters: {Path(image_paths[i]).name}")
             da = model.predict_detections_and_associations([img], processor)
             det_assoc.extend(da)
-
             if args.skip_ocr:
                 ocr.append({"ocr_texts": [], "bboxes": []})
             else:
                 print(f"[{i+1}/{total}] Running OCR: {Path(image_paths[i]).name}")
                 oc = model.predict_ocr([img], processor)
                 ocr.extend(oc)
-
             print(f"[{i+1}/{total}] Done ✓")
 
-        
     out_dir = Path(args.out).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     transcript_items_all: list[dict] = []
     transcript_lines_all: list[str] = []
+
+    # Build character hints once from all pages (generic — no hardcoded names)
+    all_panels_flat = [r for r in det_assoc if isinstance(r, dict)]
+    character_hints = _build_character_hints(all_panels_flat, chapter_context=args.chapter_context)
+    if character_hints:
+        print(f"[SceneLabels] Character hints:\n{character_hints}")
 
     for page_idx, (image_path, page_result, page_ocr) in enumerate(zip(image_paths, det_assoc, ocr)):
         print(f"\n[Page {page_idx+1}/{len(image_paths)}] Post-processing: {Path(image_path).name}")
@@ -915,7 +934,7 @@ def main() -> None:
         if not args.no_viz and isinstance(page_result, dict):
             _draw_overlay(image_path, page_result, str(out_dir / f"page_{page_idx}_annotated.png"))
 
-        # Scene labels (Ollama or Gemini)
+        # Scene labels
         if args.scene_labels and isinstance(page_result, dict):
             pil_page = Image.open(image_path).convert("RGB")
             panel_rects = []
@@ -928,9 +947,9 @@ def main() -> None:
             panel_rects = panel_rects[: max(0, args.max_panels)]
 
             scene_items: list[dict] = []
+            caption_prompt = _ollama_caption_prompt(character_hints=character_hints)
 
             if args.scene_provider == "ollama":
-                caption_prompt = _ollama_caption_prompt()
                 for panel_idx, rect in enumerate(panel_rects):
                     crop = _crop_rect(pil_page, rect)
                     try:
@@ -939,12 +958,11 @@ def main() -> None:
                             model=args.ollama_model,
                             prompt=caption_prompt,
                             image=crop,
-                            max_tokens=max(16, args.scene_tokens),
+                            max_tokens=max(64, args.scene_tokens),
                             timeout_s=max(30, int(args.ollama_timeout)),
                         )
                     except Exception as e:
                         caption_text = f"ERROR: {e}"
-
                     try:
                         tags_text = _ollama_generate_text(
                             host=args.ollama_host,
@@ -957,27 +975,20 @@ def main() -> None:
                         )
                     except Exception as e:
                         tags_text = f"ERROR: {e}"
-
                     tags, _ = _parse_scene_labels(tags_text)
-                    scene_items.append(
-                        {
-                            "page_idx": page_idx,
-                            "panel_idx": panel_idx,
-                            "bbox": list(rect),
-                            "tags": tags,
-                            "caption": caption_text.strip(),
-                            "raw": {"provider": "ollama", "caption_raw": caption_text, "tags_raw": tags_text},
-                        }
-                    )
+                    scene_items.append({
+                        "page_idx": page_idx,
+                        "panel_idx": panel_idx,
+                        "bbox": list(rect),
+                        "tags": tags,
+                        "caption": caption_text.strip(),
+                        "raw": {"provider": "ollama", "caption_raw": caption_text, "tags_raw": tags_text},
+                    })
 
             else:
-                # ---------------------------------------------------------------
-                # Gemini path (with key rotation)
-                # ---------------------------------------------------------------
+                # Gemini path
                 gemini_keys = _load_gemini_keys(args.gemini_key_env)
-
                 if not gemini_keys:
-                    # No keys at all – mark every panel as an error immediately.
                     by_panel: dict[int, dict] = {
                         panel_idx: {
                             "tags": [],
@@ -990,8 +1001,7 @@ def main() -> None:
                     print(f"[Gemini] Loaded {len(gemini_keys)} API key(s) for rotation.")
                     if args.gemini_log_key:
                         fps = [hashlib.sha256(k.encode("utf-8")).hexdigest()[:10] for k in gemini_keys]
-                        print(f"[Gemini] Key env base name: {args.gemini_key_env}")
-                        print(f"[Gemini] Key fingerprints (index → fingerprint): {list(enumerate(fps))}")
+                        print(f"[Gemini] Key fingerprints: {list(enumerate(fps))}")
                     rotator = GeminiKeyRotator(gemini_keys, log_key_fingerprint=args.gemini_log_key)
 
                     cache_path = out_dir / "scene_cache_gemini.json"
@@ -1001,7 +1011,7 @@ def main() -> None:
                         cache = {}
                     cache = cache if isinstance(cache, dict) else {}
 
-                    prompt_version = "v1"
+                    prompt_version = "v2"  # bump when prompt changes to invalidate old cache
                     panel_crops: list[tuple[int, Image.Image, str]] = []
                     for panel_idx, rect in enumerate(panel_rects):
                         crop = _crop_rect(pil_page, rect)
@@ -1028,11 +1038,10 @@ def main() -> None:
                     gemini_batches_meta: list[dict] = []
 
                     for i in range(0, len(missing), batch_size):
-                        batch = missing[i : i + batch_size]
+                        batch = missing[i: i + batch_size]
                         max_tok = max(128, args.scene_tokens * max(1, len(batch)))
 
-                        def _make_call(tok_budget: int):
-                            """Return a callable that accepts an api_key and runs the batch."""
+                        def _make_call(tok_budget: int, _hints: str = character_hints):
                             def _call(api_key: str):
                                 return _gemini_generate_scene_json_batch(
                                     api_key=api_key,
@@ -1042,6 +1051,7 @@ def main() -> None:
                                     temperature=0.2,
                                     thinking_budget=max(0, int(args.gemini_thinking_budget)),
                                     timeout_s=max(5, args.gemini_timeout),
+                                    character_hints=_hints,
                                 )
                             return _call
 
@@ -1052,24 +1062,10 @@ def main() -> None:
                                 "panel_indices": [pidx for pidx, _ in batch],
                                 "finishReason": raw.get("finishReason"),
                                 "usageMetadata": raw.get("usageMetadata"),
-                                "key_index_used": rotator._idx,
-                                "key_fingerprint": rotator.current_key_fingerprint(),
                             })
-
-                            # If truncated, retry once with a larger output budget.
                             if (not items) and raw.get("finishReason") == "MAX_TOKENS":
                                 retry_tok = min(2048, max_tok * 2)
                                 items, raw = rotator.call(_make_call(retry_tok))
-                                gemini_batches_meta.append({
-                                    "page_idx": page_idx,
-                                    "panel_indices": [pidx for pidx, _ in batch],
-                                    "finishReason": raw.get("finishReason"),
-                                    "usageMetadata": raw.get("usageMetadata"),
-                                    "key_index_used": rotator._idx,
-                                    "key_fingerprint": rotator.current_key_fingerprint(),
-                                    "retry": True,
-                                })
-
                             for it in items:
                                 pidx = int(it.get("panel_idx"))
                                 if pidx not in missing_keys:
@@ -1083,35 +1079,25 @@ def main() -> None:
                                     "tags": it.get("tags", []),
                                     "caption": it.get("caption", "").strip(),
                                 }
-
                             for pidx, _ in batch:
                                 if pidx not in by_panel:
                                     by_panel[pidx] = {
                                         "tags": [],
                                         "caption": "ERROR: Gemini did not return an item for this panel",
-                                        "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "gemini_raw": raw},
+                                        "raw": {"provider": "gemini"},
                                     }
-
                         except Exception as e:
                             for pidx, _ in batch:
                                 if pidx not in by_panel:
                                     by_panel[pidx] = {
                                         "tags": [],
                                         "caption": f"ERROR: {e}",
-                                        "raw": {"provider": "gemini", "cache_key": missing_keys.get(pidx, ""), "cached": False},
+                                        "raw": {"provider": "gemini"},
                                     }
 
                     try:
                         cache_path.write_text(
                             json.dumps(_to_jsonable(cache), ensure_ascii=False, indent=2),
-                            encoding="utf-8",
-                        )
-                    except Exception:
-                        pass
-
-                    try:
-                        (out_dir / f"page_{page_idx}_gemini_usage.json").write_text(
-                            json.dumps(_to_jsonable(gemini_batches_meta), ensure_ascii=False, indent=2),
                             encoding="utf-8",
                         )
                     except Exception:
@@ -1128,11 +1114,10 @@ def main() -> None:
                         "raw": info.get("raw", {}),
                     })
 
-                # AUTO fallback: fill Gemini failures with Ollama.
+                # AUTO fallback: fill Gemini failures with Ollama
                 if args.scene_provider == "auto":
-                    caption_prompt = _ollama_caption_prompt()
                     for item in scene_items:
-                        if item.get("caption", "").startswith("ERROR:") or not (item.get("caption", "") or "").strip():
+                        if item.get("caption", "").startswith("ERROR:") or not (item.get("caption") or "").strip():
                             panel_idx = int(item["panel_idx"])
                             rect = panel_rects[panel_idx]
                             crop = _crop_rect(pil_page, rect)
@@ -1142,7 +1127,7 @@ def main() -> None:
                                     model=args.ollama_model,
                                     prompt=caption_prompt,
                                     image=crop,
-                                    max_tokens=max(16, args.scene_tokens),
+                                    max_tokens=max(64, args.scene_tokens),
                                     timeout_s=max(30, int(args.ollama_timeout)),
                                 )
                             except Exception as e:
@@ -1174,10 +1159,9 @@ def main() -> None:
                 encoding="utf-8",
             )
 
-        # Panel captioning (+ optional character grounding)
+        # Panel captioning
         if args.panel_grounding:
             args.panel_captions = True
-
         if args.panel_captions and isinstance(page_result, dict):
             panel_boxes = page_result.get("panels", []) or []
             panel_rects_cap: list[tuple[float, float, float, float]] = []
@@ -1186,9 +1170,7 @@ def main() -> None:
                 if rect is None:
                     continue
                 panel_rects_cap.append(rect)
-
             panel_rects_cap = panel_rects_cap[: max(0, args.max_panels)]
-
             panel_caption_items: list[dict] = []
             if panel_rects_cap:
                 page_img = _read_image_rgb_np(image_path)
@@ -1196,8 +1178,7 @@ def main() -> None:
                 input_texts = ["Caption the region in 1 short sentence: {0}"] * len(panel_rects_cap)
                 input_bboxes = [[[list(rect)]] for rect in panel_rects_cap]
                 captions = _generate_text(
-                    model,
-                    processor,
+                    model, processor,
                     images=panel_images_cap,
                     input_texts=input_texts,
                     input_bboxes=input_bboxes,
@@ -1212,12 +1193,10 @@ def main() -> None:
                         "bbox": list(rect),
                         "caption": caption.strip(),
                     })
-
                 (out_dir / f"page_{page_idx}_panel_captions.json").write_text(
                     json.dumps(_to_jsonable(panel_caption_items), ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
-
                 if args.panel_grounding:
                     grounded = model.predict_character_grounding(
                         panel_images_cap,
@@ -1249,8 +1228,7 @@ def main() -> None:
             )
             page_img = _read_image_rgb_np(image_path)
             prose = _generate_text(
-                model,
-                processor,
+                model, processor,
                 images=[page_img],
                 input_texts=[prose_prompt],
                 input_bboxes=[[]],
@@ -1273,7 +1251,6 @@ def main() -> None:
     print(f"- detections_and_associations: {type(det_assoc).__name__} (len={len(det_assoc)})")
     print(f"- ocr: {type(ocr).__name__} (len={len(ocr)})")
     print(f"- outputs: {str(out_dir)}")
-
     if len(det_assoc) > 0 and isinstance(det_assoc[0], dict):
         print(f"First page keys: {sorted(det_assoc[0].keys())}")
 

@@ -1,0 +1,26 @@
+[
+  {
+    "text_idx": 4,
+    "speaker": "unsure",
+    "text": "Aren't I the wrong person?",
+    "bbox": [
+      488.52001953125,
+      2770.5,
+      648.3600463867188,
+      2887.5
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 5,
+    "speaker": "unsure",
+    "text": "I knew it...",
+    "bbox": [
+      351.0,
+      2596.5,
+      509.4000244140625,
+      2644.5
+    ],
+    "essential": true
+  }
+]

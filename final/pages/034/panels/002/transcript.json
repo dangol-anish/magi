@@ -1,0 +1,14 @@
+[
+  {
+    "text_idx": 3,
+    "speaker": "unsure",
+    "text": "You will be living in the castle of the Ekldonia family.",
+    "bbox": [
+      157.32000732421875,
+      2683.5,
+      375.4800109863281,
+      2866.5
+    ],
+    "essential": true
+  }
+]

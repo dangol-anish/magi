@@ -1,0 +1,3 @@
+<char_0>: But murders the enemy relentlessly...
+<char_0>: ST: Huh...?
+<char_0>: Okay.

@@ -1,0 +1,13 @@
+{
+  "panel_id": "chapter_1_p025_n002_87add51a8e",
+  "page_idx": 25,
+  "panel_idx": 2,
+  "bbox": [
+    42.12000274658203,
+    2.375999927520752,
+    649.800048828125,
+    582.1199951171875
+  ],
+  "crop_path": "final/pages/025/panels/002/panel.png",
+  "crop_sha256_png": "87add51a8e29f5003616488154615d42c26399d83a7ebf0408d696e664163027"
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "text_idx": 0,
+    "speaker": "unsure",
+    "text": "After the war, there were many orphans...",
+    "bbox": [
+      344.52001953125,
+      610.5065307617188,
+      518.760009765625,
+      758.7445068359375
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 1,
+    "speaker": "unsure",
+    "text": "The aristocrats took half",
+    "bbox": [
+      459.0000305175781,
+      895.2794799804688,
+      649.800048828125,
+      1012.3095092773438
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 2,
+    "speaker": "unsure",
+    "text": "And red them taught them to make them look like noble child Ren...",
+    "bbox": [
+      86.04000091552734,
+      1300.9835205078125,
+      320.760009765625,
+      1519.439453125
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 3,
+    "speaker": "unsure",
+    "text": "Where people bras about each other like pets in society?",
+    "bbox": [
+      431.6400146484375,
+      2295.738525390625,
+      667.800048828125,
+      2479.08544921875
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 4,
+    "speaker": "char_1",
+    "text": "Isn't for a proper show",
+    "bbox": [
+      291.96002197265625,
+      2092.886474609375,
+      457.5600280761719,
+      2248.926513671875
+    ],
+    "essential": true
+  },
+  {
+    "text_idx": 5,
+    "speaker": "unsure",
+    "text": "would he do that though...",
+    "bbox": [
+      121.32000732421875,
+      3247.58251953125,
+      360.3600158691406,
+      3333.404541015625
+    ],
+    "essential": true
+  }
+]
